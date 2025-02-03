@@ -15,21 +15,60 @@ impl std::error::Error for ParseError {}
 pub type M8Result<T> = std::result::Result<T, ParseError>;
 
 pub struct Writer {
-    buffer: Vec<u8>
+    buffer: Vec<u8>,
+    pos: usize
 }
 
 impl Writer {
-    pub fn write(&mut self, v: u8) { self.buffer.push(v); }
-
-    pub fn write_string(&mut self, _str: &str, _fill: usize) {
+    /// Initialize the writer from a loaded song
+    pub fn new(v: Vec<u8>) -> Writer {
+        Writer { buffer: v, pos: 0 }
     }
 
-    pub fn pos(&self) -> usize { self.buffer.len() }
+    /// Terminate writing and return the buffer
+    pub fn finish(self) -> Vec<u8> {
+        self.buffer
+    }
 
-    pub fn fill_till(&mut self, v: u8, until : usize) {
-        let to_fill = until - self.buffer.len();
-        for _i in 0 .. to_fill {
-            self.buffer.push(v);
+    pub fn write(&mut self, v: u8) {
+        self.buffer[self.pos] = v;
+        self.pos += 1;
+    }
+
+    pub fn write_bytes(&mut self, bytes: &[u8]) {
+        let mut cursor = self.pos;
+        let buff = &mut self.buffer;
+
+        for b in bytes {
+            buff[cursor] = *b;
+            cursor += 1;
+        }
+
+        self.pos = cursor;
+    }
+
+    pub fn write_string(&mut self, str: &str, fill: usize) {
+        let bytes = str.as_bytes();
+        self.write_bytes(bytes);
+        self.fill_till(0, fill - bytes.len());
+    }
+
+    pub fn skip(&mut self, skip: usize) {
+        self.pos += skip
+    }
+
+    pub fn seek(&mut self, new_pos: usize) {
+        self.pos = new_pos;
+    }
+
+    pub fn pos(&self) -> usize { self.pos }
+
+    fn fill_till(&mut self, v: u8, until : usize) {
+        if until == 0 { return }
+
+        for _i in 0 .. until {
+            self.buffer[self.pos] = v;
+            self.pos += 1;
         }
     }
 }
@@ -42,10 +81,11 @@ pub struct Reader {
 #[allow(dead_code)]
 impl Reader {
     pub fn new(buffer: Vec<u8>) -> Self {
-        Self {
-            buffer,
-            position: 0,
-        }
+        Self { buffer, position: 0, }
+    }
+
+    pub fn len(&self) -> usize {
+        self.buffer.len()
     }
 
     pub fn read(&mut self) -> u8 {
@@ -68,10 +108,16 @@ impl Reader {
 
     pub fn read_string(&mut self, n: usize) -> String {
         let b = self.read_bytes(n);
-        let end = b.iter().position(|&x| x == 0 || x == 255).unwrap_or(0);
-        std::str::from_utf8(&b[0..end])
-            .expect("invalid utf-8 sequence in string")
-            .to_string()
+        let mut end = b.iter().position(|&x| x == 0 || x == 255).unwrap_or(n);
+
+        while end > 0 {
+            match std::str::from_utf8(&b[0..end]) {
+                Ok(str) => return str.to_string(),
+                Err(_) => end -= 1
+            }
+        }
+        
+        String::from("")
     }
 
     pub fn pos(&self) -> usize { self.position }

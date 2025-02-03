@@ -12,6 +12,7 @@ pub struct Scale {
     pub name: String,
     pub notes: [NoteOffset; 12], // Offsets for notes C-B
 }
+
 impl Scale {
     const SIZE: usize = 32;
 
