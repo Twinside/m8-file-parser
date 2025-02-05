@@ -10,7 +10,7 @@ This does not represent _this_ repository, but here they are:
 Reads [Dirtwave M8](https://dirtywave.com/) files into Rust structs.
 
 Big thanks to [m8-js](https://github.com/whitlockjc/m8-js) who did all the real dirty work and [m8-files (main)](https://github.com/AlexCharlton/m8-files)
-that the initial conversion.
+whom did the initial rust version.
 
 ## Usage
 
