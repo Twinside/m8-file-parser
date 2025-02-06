@@ -15,5 +15,3 @@ pub use scale::*;
 pub use settings::*;
 pub use theme::*;
 pub use version::*;
-
-mod web;
