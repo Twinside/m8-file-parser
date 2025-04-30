@@ -55,6 +55,33 @@ const HYPERSYNTH_COMMAND_NAMES : [&'static str; CommandPack::BASE_INSTRUMENT_COM
 ];
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
+const HYPERSYNTH_COMMAND_NAMES_6 : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] = [
+    "VOL",
+    "PIT",
+    "FIN",
+    "CRD",
+    "CVO",
+    "SWM",
+    "WID",
+    "SUB",
+    "FLT",
+    "CUT",
+    "RES",
+    "AMP",
+    "LIM",
+    "PAN",
+    "DRY",
+    
+    "SCH",
+    "SDL",
+    "SRV",
+
+    // EXTRA
+    "SNC",
+    "ERR"
+];
+
+#[rustfmt::skip] // Keep constants with important order vertical for maintenance
 const DESTINATIONS : [&'static str; 15] = [
     dests::OFF,
     dests::VOLUME,
@@ -77,8 +104,12 @@ const DESTINATIONS : [&'static str; 15] = [
 impl HyperSynth {
     const MOD_OFFSET: usize = 23;
 
-    pub fn command_name(&self, _ver: Version) -> &'static [&'static str] {
-        &HYPERSYNTH_COMMAND_NAMES
+    pub fn command_name(&self, ver: Version) -> &'static [&'static str] {
+        if ver.at_least(6, 0) {
+            &HYPERSYNTH_COMMAND_NAMES_6
+        } else {
+            &HYPERSYNTH_COMMAND_NAMES
+        }
     }
 
     pub fn destination_names(&self, _ver: Version) -> &'static [&'static str] {

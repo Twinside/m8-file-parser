@@ -12,16 +12,18 @@ pub enum EqType {
     BandPass = 3,
     HiShelf = 4,
     HiCut = 5,
+    AllPass = 6,
 }
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
-const EQ_TYPE_STR : [&'static str; 6] = [
+const EQ_TYPE_STR : [&'static str; 7] = [
     "LOWCUT",
     "LOWSHELF",
     "BELL",
     "BANDPASS",
     "HI.SHELF",
-    "HI.CUT"
+    "HI.CUT",
+    "ALLPASS"
 ];
 
 #[repr(u8)]

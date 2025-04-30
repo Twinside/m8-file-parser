@@ -22,6 +22,12 @@ pub enum SamplePlayMode {
     OSC,
     OSC_REV,
     OSC_PP,
+    REPITCH,
+    REP_REV,
+    REP_PP,
+    REP_BPM,
+    BPM_REV,
+    BPM_PP,
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -42,7 +48,7 @@ pub struct Sampler {
 }
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
-const SAMPLER_FX_COMMANDS : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 1] = [
+const SAMPLER_FX_COMMANDS : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] = [
     "VOL",
     "PIT",
     "FIN",
@@ -64,7 +70,8 @@ const SAMPLER_FX_COMMANDS : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_
     "SRV",
 
     // EXTRA command
-    "SLI"
+    "SLI",
+    "ERR"
 ];
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance

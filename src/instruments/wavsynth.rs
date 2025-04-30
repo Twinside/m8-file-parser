@@ -102,7 +102,7 @@ pub struct WavSynth {
 }
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
-const WAVSYNTH_COMMAND_NAMES : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT] = [
+const WAVSYNTH_COMMAND_NAMES : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] = [
     "VOL",
     "PIT",
     "FIN",
@@ -122,6 +122,9 @@ const WAVSYNTH_COMMAND_NAMES : [&'static str; CommandPack::BASE_INSTRUMENT_COMMA
     "SCH",
     "SDL",
     "SRV",
+
+    "SNC",
+    "ERR"
 ];
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance

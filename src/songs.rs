@@ -193,8 +193,6 @@ impl Song {
             ));
         }
 
-        println!("Version: {}.{}", version.major, version.minor);
-
         Self::from_reader(&mut reader, version)
     }
 
@@ -267,7 +265,6 @@ impl Song {
             .map(|_| Table::from_reader(reader, version))
             .collect::<M8Result<Vec<Table>>>()?;
 
-        println!("Instrument {}", reader.pos());
         let instruments = (0..Self::N_INSTRUMENTS)
             .map(|i| Instrument::from_reader(reader, i as u8, version))
             .collect::<M8Result<Vec<Instrument>>>()?;

@@ -47,7 +47,7 @@ impl From<TranspEq> for u8 {
 }
 
 #[rustfmt::skip] // Keep constats with important order vertical for maintenance
-const LIMIT_TYPE : [&str; 8] = [
+const LIMIT_TYPE : [&str; 9] = [
     "CLIP",
     "SIN",
     "FOLD",
@@ -55,7 +55,8 @@ const LIMIT_TYPE : [&str; 8] = [
     "POST",
     "POSTAD",
     "POST:W1",
-    "POST:W2"
+    "POST:W2",
+    "POST:W3"
 ];
 
 #[derive(PartialEq, Clone, Copy)]

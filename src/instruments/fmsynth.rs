@@ -2,6 +2,7 @@ use crate::instruments::common::*;
 use crate::reader::*;
 use crate::version::*;
 use crate::writer::Writer;
+use array_concat::concat_arrays;
 use num_enum::IntoPrimitive;
 use num_enum::TryFromPrimitive;
 
@@ -137,7 +138,7 @@ pub enum FMWave {
 }
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
-const FM_FX_COMMANDS : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 1] = [
+const FM_FX_BASE_COMMANDS : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT] = [
     "VOL",
     "PIT",
     "FIN",
@@ -157,9 +158,15 @@ const FM_FX_COMMANDS : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT
     "SCH",
     "SDL",
     "SRV",
-    
-    "FMP",
 ];
+
+#[rustfmt::skip] // Keep constants with important order vertical for maintenance
+const FM_FX_COMMANDS_UPTO_5 : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 1] =
+    concat_arrays!(FM_FX_BASE_COMMANDS, ["FMP"]);
+
+#[rustfmt::skip] // Keep constants with important order vertical for maintenance
+const FM_FX_COMMANDS_FROM_6 : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] =
+    concat_arrays!(FM_FX_BASE_COMMANDS, ["SNC", "ERR"]);
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
 const DESTINATIONS : [&'static str; 15] = [
@@ -212,8 +219,12 @@ pub struct FMSynth {
 impl FMSynth {
     const MOD_OFFSET: usize = 2;
 
-    pub fn command_name(&self, _ver: Version) -> &'static [&'static str] {
-        &FM_FX_COMMANDS
+    pub fn command_name(&self, ver: Version) -> &'static [&'static str] {
+        if ver.at_least(6, 0) {
+            &FM_FX_COMMANDS_FROM_6
+        } else {
+            &FM_FX_COMMANDS_UPTO_5
+        }
     }
 
     pub fn destination_names(&self, _ver: Version) -> &'static [&'static str] {

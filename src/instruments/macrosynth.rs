@@ -65,7 +65,7 @@ pub enum MacroSynthOsc {
 }
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
-const MACRO_SYNTH_COMMANDS : [&'static str;  CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 1] = [
+const MACRO_SYNTH_COMMANDS : [&'static str;  CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] = [
     "VOL",
     "PIT",
     "FIN",
@@ -87,7 +87,8 @@ const MACRO_SYNTH_COMMANDS : [&'static str;  CommandPack::BASE_INSTRUMENT_COMMAN
     "SRV",
 
     // EXTRA command
-    "TRG"
+    "TRG",
+    "ERR"
 ];
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance

@@ -142,7 +142,7 @@ const SEQ_COMMAND_V3 : [&'static str; 27] = [
     "TBX",
     "TPO",
     "TSP",
-    "OFF",
+    "OFF"
 ];
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
@@ -193,7 +193,7 @@ const COMMANDS_V3: [&'static str; concat_arrays_size!(SEQ_COMMAND_V3, FX_MIXER_C
 //////////////////////////////////////////
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
-const FX_MIXER_COMMAND_V4 : [&'static str; 44] = [
+const FX_MIXER_COMMAND_V4 : [&'static str; 45] = [
     "VMV",
     "XCM",
     "XCF",
@@ -239,6 +239,7 @@ const FX_MIXER_COMMAND_V4 : [&'static str; 44] = [
     "RTO", // 0x44
     "ARC", // 0x45
     "GGR", // 0x46
+    "NXT", // 0x47
 ];
 
 const COMMANDS_V4: [&'static str; concat_arrays_size!(SEQ_COMMAND_V3, FX_MIXER_COMMAND_V4)] =
