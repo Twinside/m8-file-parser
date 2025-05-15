@@ -1,4 +1,5 @@
 use crate::reader::*;
+use crate::remapper::{EqMapping, InstrumentMapping, TableMapping};
 use crate::version::*;
 use crate::writer::Writer;
 use crate::CommandPack;
@@ -10,6 +11,18 @@ pub struct FxCommands {
 }
 
 impl FxCommands {
+    pub fn find_indices(&self, to_find: &[&str]) -> Vec<u8> {
+        let mut out = vec![];
+
+        for (i, cmd) in self.commands.iter().enumerate() {
+            if to_find.contains(cmd) {
+                out.push(i as u8)
+            }
+        }
+
+        out
+    }
+
     pub fn try_render(self, cmd: u8) -> Option<&'static str> {
         let cmd = cmd as usize;
 
@@ -25,6 +38,46 @@ impl FxCommands {
 pub struct FX {
     pub command: u8,
     pub value: u8,
+}
+
+impl FX {
+    pub fn map_instr(
+        self,
+        instrument_mapping: &InstrumentMapping,
+        table_mapping: &TableMapping,
+        eq_mapping: &EqMapping,
+    ) -> Self {
+        let uval = self.value as usize;
+
+        if instrument_mapping
+            .instrument_tracking_commands
+            .contains(&self.command)
+            && uval < instrument_mapping.mapping.len()
+        {
+            Self {
+                command: self.command,
+                value: instrument_mapping.mapping[uval],
+            }
+        } else if table_mapping
+            .table_tracking_commands
+            .contains(&self.command)
+            && uval < table_mapping.mapping.len()
+        {
+            Self {
+                command: self.command,
+                value: table_mapping.mapping[uval],
+            }
+        } else if eq_mapping.eq_tracking_commands.contains(&self.command)
+            && uval < eq_mapping.mapping.len()
+        {
+            Self {
+                command: self.command,
+                value: eq_mapping.mapping[uval],
+            }
+        } else {
+            self
+        }
+    }
 }
 
 impl Default for FX {

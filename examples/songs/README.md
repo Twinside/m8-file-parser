@@ -12,6 +12,7 @@ So we have:
  * `V5EMPTY.m8s` : Empty song in the 4.2 format (FW 5.0) (different form V4EMPTY.m8s)
  * `V6EMPTY_beta.m8s` : Empty song of FW 6.0, not analyzed yet
  * `TEST-FILE.m8s` : Historic test song
+ * `TRACKEQ.m8s` : a song using many commands tracking EQ/Table/instruments
 
 ## Bundle
 
