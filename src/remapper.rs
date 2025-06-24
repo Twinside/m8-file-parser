@@ -372,7 +372,7 @@ const INSTRUMENT_TRACKING_COMMAND_NAMES: [&'static str; 2] = ["INS", "NXT"];
 
 /// This command an external "table", that also must be copied
 /// in order to properly reproduce the phrase
-const TABLE_TRACKING_COMMAND_NAMES: [&'static str; 1] = ["TBX"];
+const TABLE_TRACKING_COMMAND_NAMES: [&'static str; 2] = ["TBX", "TBL"];
 
 /// These commands track EQs, that must be copied, yada yada.
 const EQ_TRACKING_COMMAND_NAMES: [&'static str; 2] = ["EQI", "EQM"];
