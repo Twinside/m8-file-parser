@@ -1,11 +1,10 @@
 [package]
-name = "m8-files"
+name = "m8-file-parser"
 description = "Parse the Dirtywave M8's file formats"
-version = "0.3.1"
+version = "0.4.0"
 edition = "2021"
-repository = "https://github.com/AlexCharlton/m8-files"
-documentation = "https://docs.rs/m8-files"
-homepage = "https://github.com/AlexCharlton/m8-files"
+repository = "https://github.com/Twinside/m8-file-parser"
+homepage = "https://github.com/Twinside/m8-file-parser"
 license = "MIT"
 keywords = ["music"]
 
