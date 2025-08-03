@@ -75,6 +75,7 @@ mod settings;
 mod songs;
 mod theme;
 mod version;
+pub mod param_gatherer;
 pub mod writer;
 
 pub use eq::*;
