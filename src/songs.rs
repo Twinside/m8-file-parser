@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::fmt;
 
 use crate::eq::Equ;
@@ -144,6 +145,7 @@ impl Song {
     pub fn phrase_view(&self, ix: usize) -> PhraseView {
         PhraseView {
             phrase: &self.phrases[ix],
+            phrase_id: ix,
             instruments: &self.instruments,
         }
     }
@@ -163,6 +165,7 @@ impl Song {
     pub fn table_view(&self, ix: usize) -> TableView {
         TableView {
             table: &self.tables[ix],
+            table_index: ix,
             instrument: if ix < Song::N_INSTRUMENTS {
                 self.instruments[ix].instr_command_text(self.version)
             } else {
@@ -344,27 +347,53 @@ impl SongSteps {
     pub const TRACK_COUNT: usize = 8;
     pub const ROW_COUNT: usize = 0x100;
 
-    pub fn print_screen(&self) -> String {
-        self.print_screen_from(0)
+    pub fn print_screen(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
+        self.print_screen_from_to(f, 0, self.last_modified_row() as u8)
     }
 
-    pub fn print_screen_from(&self, start: u8) -> String {
-        (start..start + 16).fold("   1  2  3  4  5  6  7  8  \n".to_string(), |s, row| {
-            s + &self.print_row(row) + "\n"
-        })
+    pub fn last_modified_row(&self) -> usize {
+        for row in (0 .. SongSteps::ROW_COUNT).rev() {
+            let ix = row * SongSteps::TRACK_COUNT;
+
+            let is_empty =
+                self.steps[ix .. ix + SongSteps::TRACK_COUNT].iter().all(|v| *v == 0xFF);
+
+            if !is_empty {
+                return row;
+            }
+        }
+
+        SongSteps::ROW_COUNT
     }
 
-    pub fn print_row(&self, row: u8) -> String {
+    pub fn print_screen_from_to(&self, f: &mut fmt::Formatter<'_>, start: u8, end: u8) -> std::fmt::Result  {
+        write!(f, "   1  2  3  4  5  6  7  8  \n")?;
+
+        for row in start .. min(0xFF, end + 1) {
+            self.print_row(f, row)?;
+            writeln!(f, "")?;
+        };
+
+        Ok(())
+    }
+
+    pub fn print_row(&self, f: &mut fmt::Formatter<'_>, row: u8) -> std::fmt::Result {
         let start = row as usize * 8;
-        (start..start + 8).fold(format!("{row:02x} "), |s, b| -> String {
-            let v = self.steps[b];
-            let repr = if v == 255 {
-                format!("-- ")
+
+        write!(f, "{row:02x} ")?;
+
+
+        for bix in start .. start + 8 {
+            let v = self.steps[bix];
+
+            if v == 0xFF{
+                write!(f, "-- ")?
             } else {
-                format!("{:02x} ", v)
-            };
-            s + &repr
-        })
+                write!(f, "{:02x} ", v)?
+            }
+        };
+
+        Ok(())
     }
 
     fn from_reader(reader: &mut Reader) -> M8Result<Self> {
@@ -376,9 +405,11 @@ impl SongSteps {
 
 impl fmt::Display for SongSteps {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "SONG\n\n{}", self.print_screen())
+        write!(f, "SONG\n\n")?;
+        self.print_screen(f)
     }
 }
+
 impl fmt::Debug for SongSteps {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", &self)
@@ -408,10 +439,15 @@ impl Chain {
         }
     }
 
-    pub fn print_screen(&self) -> String {
-        (0..16).fold("  PH TSP\n".to_string(), |s, row| {
-            s + &self.steps[row].print(row as u8) + "\n"
-        })
+    pub fn print_screen(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "  PH TSP\n")?;
+
+        for row in 0 .. 16 {
+            self.steps[row].print(f, row as u8)?;
+            write!(f, "\n")?;
+        }
+
+        Ok(())
     }
 
     pub fn map(&self, mapping: &PhraseMapping) -> Self {
@@ -439,7 +475,8 @@ impl Chain {
 
 impl fmt::Display for Chain {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "CHAIN\n\n{}", self.print_screen())
+        write!(f, "CHAIN\n\n")?;
+        self.print_screen(f)
     }
 }
 impl fmt::Debug for Chain {
@@ -470,11 +507,11 @@ impl ChainStep {
         self.phrase == 0xFF
     }
 
-    pub fn print(&self, row: u8) -> String {
+    pub fn print(&self, f: &mut fmt::Formatter<'_>, row: u8) -> std::fmt::Result {
         if self.is_empty() {
-            format!("{:x} -- 00", row)
+            write!(f, "{:x} -- 00", row)
         } else {
-            format!("{:x} {:02x} {:02x}", row, self.phrase, self.transpose)
+            write!(f, "{:x} {:02x} {:02x}", row, self.phrase, self.transpose)
         }
     }
 
@@ -527,10 +564,11 @@ impl Phrase {
         }
     }
 
-    pub fn print_screen(&self, instruments: &[Instrument]) -> String {
+    pub fn print_screen(&self, f: &mut fmt::Formatter<'_>, instruments: &[Instrument]) -> std::fmt::Result {
         let mut cmd_pack = CommandPack::default();
         let fx_commands = FX::fx_command_names(self.version);
-        let mut acc = String::from("  N   V  I  FX1   FX2   FX3  \n");
+
+        write!(f, "  N   V  I  FX1   FX2   FX3  \n")?;
 
         for i in 0..16 {
             let step = &self.steps[i];
@@ -540,11 +578,11 @@ impl Phrase {
                 cmd_pack = instruments[instrument].instr_command_text(self.version);
             }
 
-            acc += &step.print(i as u8, fx_commands, cmd_pack);
-            acc += "\n";
+            step.print(f, i as u8, fx_commands, cmd_pack)?;
+            write!(f, "\n")?;
         }
 
-        acc
+        Ok(())
     }
 
     pub fn map_instruments(
@@ -580,16 +618,14 @@ impl Phrase {
 
 pub struct PhraseView<'a> {
     phrase: &'a Phrase,
+    phrase_id: usize,
     instruments: &'a [Instrument],
 }
 
 impl<'a> fmt::Display for PhraseView<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "PHRASE \n\n{}",
-            self.phrase.print_screen(self.instruments)
-        )
+        write!(f, "PHRASE {:02X}\n\n", self.phrase_id)?;
+        self.phrase.print_screen(f, self.instruments)
     }
 }
 
@@ -616,7 +652,7 @@ impl Step {
         [self.fx1, self.fx2, self.fx3]
     }
 
-    pub fn print(&self, row: u8, fx_cmds: FxCommands, cmd_pack: CommandPack) -> String {
+    pub fn print(&self,  f: &mut fmt::Formatter<'_>, row: u8, fx_cmds: FxCommands, cmd_pack: CommandPack) -> std::fmt::Result {
         let velocity = if self.velocity == 255 {
             format!("--")
         } else {
@@ -628,7 +664,8 @@ impl Step {
             format!("{:02x}", self.instrument)
         };
 
-        format!(
+        write!(
+            f,
             "{:x} {} {} {} {} {} {}",
             row,
             self.note,
@@ -725,6 +762,22 @@ impl Default for Note {
     }
 }
 
+const NOTES : [&'static str; 12] =
+    [
+        "C-",
+        "C#",
+        "D-",
+        "D#",
+        "E-",
+        "F-",
+        "F#",
+        "G-",
+        "G#",
+        "A-",
+        "A#",
+        "B-"
+    ];
+
 impl fmt::Display for Note {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.0 == 255 {
@@ -733,21 +786,7 @@ impl fmt::Display for Note {
             write!(f, "OFF") // This isn't really true for < V3
         } else {
             let oct = (self.0 / 12) + 1;
-            let n = match self.0 % 12 {
-                0 => "C-",
-                1 => "C#",
-                2 => "D-",
-                3 => "D#",
-                4 => "E-",
-                5 => "F-",
-                6 => "F#",
-                7 => "G-",
-                8 => "G#",
-                9 => "A-",
-                10 => "A#",
-                11 => "B-",
-                _ => "??",
-            };
+            let n = NOTES[(self.0 % 12) as usize];
             write!(f, "{}{:X}", n, oct)
         }
     }
@@ -794,18 +833,18 @@ impl Table {
         }
     }
 
-    pub fn print_screen(&self, cmd: CommandPack) -> String {
+    pub fn print_screen(&self, f: &mut fmt::Formatter<'_>, cmd: CommandPack) -> std::fmt::Result {
         let fx_cmd = FX::fx_command_names(self.version);
-        let mut acc = String::from("  N  V  FX1   FX2   FX3  \n");
+        write!(f, "  N  V  FX1   FX2   FX3  \n")?;
 
         for i in 0..16 {
             let step = &self.steps[i];
 
-            acc += &step.print(i as u8, fx_cmd, cmd);
-            acc += "\n";
+            step.print(f, i as u8, fx_cmd, cmd)?;
+            write!(f, "\n")?
         }
 
-        acc
+        Ok(())
     }
 
     pub fn write(&self, w: &mut Writer) {
@@ -824,12 +863,14 @@ impl Table {
 
 pub struct TableView<'a> {
     table: &'a Table,
+    table_index: usize,
     instrument: CommandPack,
 }
 
 impl<'a> fmt::Display for TableView<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "TABLE\n\n{}", self.table.print_screen(self.instrument))
+        write!(f, "TABLE {:02X}\n\n", self.table_index)?;
+        self.table.print_screen(f,self.instrument)
     }
 }
 
@@ -890,18 +931,27 @@ impl TableStep {
             && self.fx3.is_empty()
     }
 
-    pub fn print(&self, row: u8, fx_cmd: FxCommands, cmds: CommandPack) -> String {
+    pub fn print(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+        row: u8,
+        fx_cmd: FxCommands,
+        cmds: CommandPack) -> std::fmt::Result {
+
         let transpose = if self.transpose == 255 {
             format!("--")
         } else {
             format!("{:02x}", self.transpose)
         };
+
         let velocity = if self.velocity == 255 {
             format!("--")
         } else {
             format!("{:02x}", self.velocity)
         };
-        format!(
+
+        write!(
+            f,
             "{:x} {} {} {} {} {}",
             row,
             transpose,
@@ -939,6 +989,7 @@ pub struct Groove {
     pub number: u8,
     pub steps: [u8; 16],
 }
+
 impl Groove {
     fn from_reader(reader: &mut Reader, number: u8) -> M8Result<Self> {
         Ok(Self {
