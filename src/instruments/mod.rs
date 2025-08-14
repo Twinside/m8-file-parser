@@ -2,6 +2,8 @@ use crate::eq::Equ;
 use crate::reader::*;
 use crate::version::*;
 use crate::writer::Writer;
+use crate::Table;
+use crate::TableView;
 use crate::V4_1_OFFSETS;
 
 mod common;
@@ -164,12 +166,25 @@ pub struct InstrumentWithEq {
     /// The parsed instrument
     pub instrument: Instrument,
 
+    /// Table associated with the instrument.
+    pub table: Table,
+
     /// If the instrument was referencing an EQ, the effectively
     /// parsed EQ.
     pub eq: Option<Equ>,
 
     /// Instrument file version
     pub version: Version
+}
+
+impl InstrumentWithEq {
+    pub fn table_view(&self) -> TableView {
+        TableView {
+            table: &self.table,
+            table_index: 0,
+            instrument: self.instrument.instr_command_text(self.version)
+        }
+    }
 }
 
 impl Instrument {
@@ -303,6 +318,7 @@ impl Instrument {
 
         let version = Version::from_reader(reader)?;
         let instrument = Self::from_reader(reader, 0, version)?;
+        let table = Table::from_reader(reader, version)?;
 
         let eq = match V4_1_OFFSETS.instrument_file_eq_offset {
             None => None,
@@ -317,7 +333,7 @@ impl Instrument {
             Some(_) => None,
         };
 
-        Ok(InstrumentWithEq { instrument, eq, version })
+        Ok(InstrumentWithEq { instrument, eq, table, version })
     }
 
     /// Read a M8 instrument file along with its optional Eq definition.

@@ -862,9 +862,9 @@ impl Table {
 }
 
 pub struct TableView<'a> {
-    table: &'a Table,
-    table_index: usize,
-    instrument: CommandPack,
+    pub(crate) table: &'a Table,
+    pub(crate) table_index: usize,
+    pub(crate) instrument: CommandPack,
 }
 
 impl<'a> fmt::Display for TableView<'a> {
