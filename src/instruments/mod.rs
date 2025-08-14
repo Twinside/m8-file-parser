@@ -167,6 +167,9 @@ pub struct InstrumentWithEq {
     /// If the instrument was referencing an EQ, the effectively
     /// parsed EQ.
     pub eq: Option<Equ>,
+
+    /// Instrument file version
+    pub version: Version
 }
 
 impl Instrument {
@@ -314,7 +317,7 @@ impl Instrument {
             Some(_) => None,
         };
 
-        Ok(InstrumentWithEq { instrument, eq })
+        Ok(InstrumentWithEq { instrument, eq, version })
     }
 
     /// Read a M8 instrument file along with its optional Eq definition.
