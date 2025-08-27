@@ -37,6 +37,82 @@ pub trait DescribableWithDictionary {
     fn describe_with_dic< PG : ParameterGatherer>(&self, pg: PG, dic: &[&'static str], ver: Version) -> PG;
 }
 
+impl Describable for InputMixerSettings {
+    fn describe<PG : ParameterGatherer>(&self, pg: PG, _ver: Version) -> PG {
+        pg
+          .hex("VOL", self.volume)
+          .hex("Chorus", self.chorus)
+          .hex("Delay", self.delay)
+          .hex("Reverb", self.reverb)
+    }
+}
+
+impl Describable for MixerSettings {
+    fn describe<PG : ParameterGatherer>(&self, pg: PG, ver: Version) -> PG {
+        let pg = pg
+            .hex("MASTER_VOL", self.master_volume)
+            .nest_f("TRACK volume", |ipg| {
+                self.track_volume.iter()
+                    .enumerate()
+                    .fold(ipg, |iipg, (i, v)|
+                        iipg.hex(&format!("VOL_{}", i), *v))
+            })
+            .hex("Chorus Vol", self.chorus_volume)
+            .hex("Delay Vol", self.delay_volume)
+            .hex("Reverb Vol", self.reverb_volume);
+
+        let pg = match &self.analog_input {
+            AnalogInputSettings::Stereo(inp) =>
+                pg.nest_f("INPUT", |ipg| inp.describe(ipg, ver)),
+            AnalogInputSettings::DualMono((l, r)) =>
+                pg.nest_f("INPUT Left", |ipg| l.describe(ipg, ver))
+                  .nest_f("INPUT right", |ipg| r.describe(ipg, ver))
+        };
+
+        pg.nest_f("USB input", |ipg| self.usb_input.describe(ipg, ver))
+          .hex("DJF", self.dj_filter)
+          .hex("PEAK", self.dj_peak)
+          .hex("FLTTY", self.dj_filter_type)
+    }
+}
+
+impl Describable for EffectsSettings {
+    fn describe<PG : ParameterGatherer>(&self, pg: PG, _ver: Version) -> PG {
+        pg.nest_f("Chorus", |ipg|
+            ipg.hex("MOD_DEPTH", self.chorus_mod_depth)
+                .hex("MOD_FREQ", self.chorus_mod_freq)
+                .hex("REVERB_SEND", self.chorus_reverb_send))
+          .nest_f("Delay", |ipg| {
+              let ipg = match &self.delay_filter {
+                  None => ipg,
+                  Some(df) =>
+                      ipg.hex("LP", df.low_pass)
+                         .hex("HP", df.high_pass)
+              };
+
+              ipg.hex("DELAY_L", self.delay_time_l)
+                 .hex("DELAY_R", self.delay_time_r)
+                 .hex("FEEDBACK", self.delay_feedback)
+                 .hex("WIDTH", self.delay_width)
+                 .hex("REVERB_SEND", self.delay_reverb_send)
+          })
+          .nest_f("Reverb", |ipg| {
+              let ipg = match &self.delay_filter {
+                  None => ipg,
+                  Some(df) =>
+                      ipg.hex("LP", df.low_pass)
+                         .hex("HP", df.high_pass)
+              };
+
+              ipg.hex("SIZE", self.reverb_size)
+                 .hex("WIDTH", self.reverb_width)
+                 .hex("DECAY", self.reverb_damping)
+                 .hex("MOD_DEPTH", self.reverb_mod_depth)
+                 .hex("MOD_FREQ", self.reverb_mod_freq)
+          })
+    }
+}
+
 impl Describable for EqBand {
     fn describe<PG : ParameterGatherer>(&self, pg: PG, _ver: Version) -> PG {
         return pg.float("GAIN", self.gain())

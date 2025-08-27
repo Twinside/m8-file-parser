@@ -178,7 +178,7 @@ pub struct InstrumentWithEq {
 }
 
 impl InstrumentWithEq {
-    pub fn table_view(&self) -> TableView {
+    pub fn table_view(&self) -> TableView<'_> {
         TableView {
             table: &self.table,
             table_index: 0,

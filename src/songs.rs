@@ -142,7 +142,7 @@ impl Song {
 
     pub const N_MIDI_MAPPINGS: usize = 128;
 
-    pub fn phrase_view(&self, ix: usize) -> PhraseView {
+    pub fn phrase_view(&self, ix: usize) -> PhraseView<'_> {
         PhraseView {
             phrase: &self.phrases[ix],
             phrase_id: ix,
@@ -162,7 +162,7 @@ impl Song {
         self.offsets().eq_count()
     }
 
-    pub fn table_view(&self, ix: usize) -> TableView {
+    pub fn table_view(&self, ix: usize) -> TableView<'_> {
         TableView {
             table: &self.tables[ix],
             table_index: ix,

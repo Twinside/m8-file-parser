@@ -131,28 +131,42 @@ pub enum AnalogInputSettings {
     DualMono((InputMixerSettings, InputMixerSettings)),
 }
 
+/// Effect filter configuration only used in old versions
+#[derive(PartialEq, Debug, Clone)]
+pub struct EffectFilter {
+    pub high_pass: u8,
+    pub low_pass: u8
+}
+
+impl EffectFilter {
+    fn from_reader(reader: &mut Reader) -> M8Result<Self> {
+        let high_pass = reader.read();
+        let low_pass = reader.read();
+        Ok(EffectFilter { high_pass, low_pass })
+    }
+}
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct EffectsSettings {
     pub chorus_mod_depth: u8,
     pub chorus_mod_freq: u8,
     pub chorus_reverb_send: u8,
 
-    pub delay_hp: u8,
-    pub delay_lp: u8,
+    pub delay_filter: Option<EffectFilter>,
     pub delay_time_l: u8,
     pub delay_time_r: u8,
     pub delay_feedback: u8,
     pub delay_width: u8,
     pub delay_reverb_send: u8,
 
-    pub reverb_hp: u8,
-    pub reverb_lp: u8,
+    pub reverb_filter: Option<EffectFilter>,
     pub reverb_size: u8,
     pub reverb_damping: u8,
     pub reverb_mod_depth: u8,
     pub reverb_mod_freq: u8,
     pub reverb_width: u8,
 }
+
 impl EffectsSettings {
     pub(crate) fn from_reader(reader: &mut Reader, version: Version) -> M8Result<Self> {
         let chorus_mod_depth = reader.read();
@@ -161,10 +175,10 @@ impl EffectsSettings {
         reader.read_bytes(3); //unused
 
         // THIS likely changed :()
-        let (delay_hp, delay_lp) = if version.at_least(4, 0) {
-            (0, 0)
+        let delay_filter = if version.at_least(4, 0) {
+            None
         } else {
-            (reader.read(), reader.read())
+            Some(EffectFilter::from_reader(reader)?)
         };
 
         let delay_time_l = reader.read();
@@ -175,10 +189,10 @@ impl EffectsSettings {
         reader.read_bytes(1); //unused
 
         // This likely changed :()
-        let (reverb_hp, reverb_lp) = if version.at_least(4, 0) {
-            (0, 0)
+        let reverb_filter = if version.at_least(4, 0) {
+            None
         } else {
-            (reader.read(), reader.read())
+            Some(EffectFilter::from_reader(reader)?)
         };
 
         let reverb_size = reader.read();
@@ -192,16 +206,14 @@ impl EffectsSettings {
             chorus_mod_freq,
             chorus_reverb_send,
 
-            delay_hp,
-            delay_lp,
+            delay_filter,
             delay_time_l,
             delay_time_r,
             delay_feedback,
             delay_width,
             delay_reverb_send,
 
-            reverb_hp,
-            reverb_lp,
+            reverb_filter,
             reverb_size,
             reverb_damping,
             reverb_mod_depth,
