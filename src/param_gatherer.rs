@@ -70,6 +70,16 @@ impl Describable for MixerSettings {
         };
 
         pg.nest_f("USB input", |ipg| self.usb_input.describe(ipg, ver))
+          .nest_f("LIMITER", |ipg| {
+            let ipg = ipg.hex("LIM", self.limiter.level);
+            match &self.limiter.attack_release {
+                None => ipg,
+                Some ((at, rl, soft)) =>
+                    ipg.hex("ATTACK", *at)
+                     .hex("RELEASE", *rl)
+                     .bool("Soft clip", *soft)
+            }
+          })
           .hex("DJF", self.dj_filter)
           .hex("PEAK", self.dj_peak)
           .hex("FLTTY", self.dj_filter_type)
@@ -81,6 +91,7 @@ impl Describable for EffectsSettings {
         pg.nest_f("Chorus", |ipg|
             ipg.hex("MOD_DEPTH", self.chorus_mod_depth)
                 .hex("MOD_FREQ", self.chorus_mod_freq)
+                .hex("WIDTH", self.chorus_width)
                 .hex("REVERB_SEND", self.chorus_reverb_send))
           .nest_f("Delay", |ipg| {
               let ipg = match &self.delay_filter {

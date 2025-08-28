@@ -254,7 +254,7 @@ impl Song {
         let midi_settings = MidiSettings::try_from(&mut *reader)?;
         let key = reader.read();
         reader.read_bytes(18); // Skip
-        let mixer_settings = MixerSettings::from_reader(reader)?;
+        let mixer_settings = MixerSettings::from_reader(reader, version)?;
 
         let grooves = (0..Self::N_GROOVES)
             .map(|i| Groove::from_reader(reader, i as u8))
@@ -274,9 +274,10 @@ impl Song {
             .map(|i| Instrument::from_reader(reader, i as u8, version))
             .collect::<M8Result<Vec<Instrument>>>()?;
 
-        reader.read_bytes(3); // Skip
+        reader.set_pos(V4_OFFSETS.effect_settings);
         let effects_settings = EffectsSettings::from_reader(reader, version)?;
-        reader.set_pos(0x1A5FE);
+
+        reader.set_pos(V4_OFFSETS.midi_mapping);
         let midi_mappings = (0..Self::N_MIDI_MAPPINGS)
             .map(|_| MidiMapping::from_reader(reader))
             .collect::<M8Result<Vec<MidiMapping>>>()?;

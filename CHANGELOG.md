@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5
+
+ - Analyzed/Fixed parsing of effect and mixer settings
+ - (soon) handling of new M8 FW
+
 ## 0.4 (hard fork)
 
  - Forking the repostiory from m8-files to m8-file-parser
