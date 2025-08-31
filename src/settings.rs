@@ -1,3 +1,5 @@
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+
 use crate::{reader::*, Version};
 
 #[derive(PartialEq, Debug, Clone)]
@@ -57,7 +59,8 @@ pub struct MixerSettings {
     pub dj_filter: u8,
     pub dj_peak: u8,
     pub dj_filter_type: u8,
-    pub limiter: LimiterParameter
+    pub limiter: LimiterParameter,
+    pub ott_level: Option<u8>
 }
 
 impl MixerSettings {
@@ -86,7 +89,7 @@ impl MixerSettings {
         };
         let usb_input = InputMixerSettings {
             volume: usb_input_volume,
-            chorus: usb_input_chorus,
+            mfx: usb_input_chorus,
             delay: usb_input_delay,
             reverb: usb_input_reverb,
         };
@@ -104,7 +107,12 @@ impl MixerSettings {
             Some((limiter_attack, limiter_release, soft_clip != 0))
         };
 
-        reader.read_bytes(4); // discard
+        let ott_level = if ver.at_least(6, 1) {
+            Some(reader.read())
+        } else {
+            None
+        };
+
         Ok(Self {
             master_volume,
             track_volume,
@@ -119,7 +127,8 @@ impl MixerSettings {
             limiter: LimiterParameter {
                 level: master_limit,
                 attack_release: limiter_conf 
-            }
+            },
+            ott_level
         })
     }
 }
@@ -127,7 +136,7 @@ impl MixerSettings {
 #[derive(PartialEq, Debug, Clone)]
 pub struct InputMixerSettings {
     pub volume: u8,
-    pub chorus: u8,
+    pub mfx: u8,
     pub delay: u8,
     pub reverb: u8,
 }
@@ -139,7 +148,7 @@ impl InputMixerSettings {
         let reverb = reader.read();
 
         Self {
-            volume, chorus, delay, reverb
+            volume, mfx: chorus, delay, reverb
         }
     }
 }
@@ -166,8 +175,34 @@ impl EffectFilter {
     }
 }
 
+#[repr(u8)]
+#[allow(non_camel_case_types)]
+#[derive(IntoPrimitive, TryFromPrimitive, PartialEq, Copy, Clone, Default, Debug)]
+pub enum FxKind {
+    #[default]
+    Chorus,
+    Phaser,
+    Flanger
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct OttConfiguration {
+    pub time: u8,
+    pub color: u8
+}
+
+impl OttConfiguration {
+    pub(crate) fn from_reader(reader: &mut Reader, _version: Version) -> M8Result<Self> {
+        Ok(Self {
+            time: reader.read(),
+            color: reader.read()
+        })
+    }
+}
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct EffectsSettings {
+    pub mfx_kind : Option<FxKind>,
     pub chorus_mod_depth: u8,
     pub chorus_mod_freq: u8,
     pub chorus_width: u8,
@@ -186,6 +221,8 @@ pub struct EffectsSettings {
     pub reverb_mod_depth: u8,
     pub reverb_mod_freq: u8,
     pub reverb_width: u8,
+    pub reverb_shimmer: Option<u8>,
+    pub ott_configuration: Option<OttConfiguration>
 }
 
 impl EffectsSettings {
@@ -222,8 +259,21 @@ impl EffectsSettings {
         let reverb_mod_depth = reader.read();
         let reverb_mod_freq = reader.read();
         let reverb_width = reader.read();
+        let (reverb_shimmer, ott_configuration, mfx_kind) =
+            if version.at_least(6, 1) {
+                let shimmer = Some(reader.read());
+                let ott = OttConfiguration::from_reader(reader, version)?;
+                let mfx = reader.read();
+                let kind =
+                   mfx.try_into().map_err(| _| ParseError(format!("Unknown MFX kind {}", mfx)))?;
+                (shimmer, Some(ott), Some(kind))
+
+            } else {
+                (None, None, None)
+            };
 
         Ok(Self {
+            mfx_kind,
             chorus_mod_depth,
             chorus_mod_freq,
             chorus_width,
@@ -242,6 +292,8 @@ impl EffectsSettings {
             reverb_mod_depth,
             reverb_mod_freq,
             reverb_width,
+            reverb_shimmer,
+            ott_configuration
         })
     }
 }

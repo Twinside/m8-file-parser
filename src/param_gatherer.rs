@@ -41,7 +41,7 @@ impl Describable for InputMixerSettings {
     fn describe<PG : ParameterGatherer>(&self, pg: PG, _ver: Version) -> PG {
         pg
           .hex("VOL", self.volume)
-          .hex("Chorus", self.chorus)
+          .hex("Chorus", self.mfx)
           .hex("Delay", self.delay)
           .hex("Reverb", self.reverb)
     }
@@ -69,30 +69,51 @@ impl Describable for MixerSettings {
                   .nest_f("INPUT right", |ipg| r.describe(ipg, ver))
         };
 
-        pg.nest_f("USB input", |ipg| self.usb_input.describe(ipg, ver))
-          .nest_f("LIMITER", |ipg| {
-            let ipg = ipg.hex("LIM", self.limiter.level);
-            match &self.limiter.attack_release {
-                None => ipg,
-                Some ((at, rl, soft)) =>
-                    ipg.hex("ATTACK", *at)
-                     .hex("RELEASE", *rl)
-                     .bool("Soft clip", *soft)
-            }
-          })
-          .hex("DJF", self.dj_filter)
-          .hex("PEAK", self.dj_peak)
-          .hex("FLTTY", self.dj_filter_type)
+        let pg =
+            pg.nest_f("USB input", |ipg| self.usb_input.describe(ipg, ver))
+            .nest_f("LIMITER", |ipg| {
+                let ipg = ipg.hex("LIM", self.limiter.level);
+                match &self.limiter.attack_release {
+                    None => ipg,
+                    Some ((at, rl, soft)) =>
+                        ipg.hex("ATTACK", *at)
+                        .hex("RELEASE", *rl)
+                        .bool("Soft clip", *soft)
+                }
+            })
+            .hex("DJF", self.dj_filter)
+            .hex("PEAK", self.dj_peak)
+            .hex("FLTTY", self.dj_filter_type);
+
+        match self.ott_level {
+            None => pg,
+            Some(ott) => pg.hex("OTT", ott)
+        }
     }
 }
 
 impl Describable for EffectsSettings {
-    fn describe<PG : ParameterGatherer>(&self, pg: PG, _ver: Version) -> PG {
-        pg.nest_f("Chorus", |ipg|
-            ipg.hex("MOD_DEPTH", self.chorus_mod_depth)
-                .hex("MOD_FREQ", self.chorus_mod_freq)
-                .hex("WIDTH", self.chorus_width)
-                .hex("REVERB_SEND", self.chorus_reverb_send))
+    fn describe<PG : ParameterGatherer>(&self, pg: PG, ver: Version) -> PG {
+        let mfx_name = if ver.at_least(6, 1) {
+            "MFX"
+        } else {
+            "Chorus"
+        };
+
+        let pg = pg
+          .nest_f(mfx_name, |ipg| {
+              let ipg =
+                  match self.mfx_kind {
+                      None => ipg,
+                      Some(mfx) => 
+                          ipg.enumeration("MFX KIND", mfx.into(), &format!("{:?}", mfx))
+                  };
+            
+              ipg.hex("MOD_DEPTH", self.chorus_mod_depth)
+                 .hex("MOD_FREQ", self.chorus_mod_freq)
+                 .hex("WIDTH", self.chorus_width)
+                 .hex("REVERB_SEND", self.chorus_reverb_send)
+          })
           .nest_f("Delay", |ipg| {
               let ipg = match &self.delay_filter {
                   None => ipg,
@@ -115,12 +136,28 @@ impl Describable for EffectsSettings {
                          .hex("HP", df.high_pass)
               };
 
-              ipg.hex("SIZE", self.reverb_size)
+              let ipg = ipg
+                 .hex("SIZE", self.reverb_size)
                  .hex("WIDTH", self.reverb_width)
                  .hex("DECAY", self.reverb_damping)
                  .hex("MOD_DEPTH", self.reverb_mod_depth)
-                 .hex("MOD_FREQ", self.reverb_mod_freq)
-          })
+                 .hex("MOD_FREQ", self.reverb_mod_freq);
+
+              match self.reverb_shimmer {
+                None => ipg,
+                Some(shimmer) => ipg.hex("SHIMMER", shimmer)
+              }
+          });
+
+        match &self.ott_configuration {
+            None => pg,
+            Some(ott) => {
+                pg.nest_f("OTT", |ipg| {
+                    ipg.hex("TIME", ott.time)
+                       .hex("COLOR", ott.color)
+                })
+            }
+        }
     }
 }
 
@@ -502,14 +539,15 @@ pub fn describe_modulators<PG : ParameterGatherer>(sp: &SynthParams, pg: PG, des
         .nest_f("MOD4", |ipg| describe_mod(&sp.mods[3], ipg, 3, dests, ver));
 }
 
-pub fn describe_succint_params<PG : ParameterGatherer>(sp: &SynthParams, pg: PG, _ver: Version) -> PG{
+pub fn describe_succint_params<PG : ParameterGatherer>(sp: &SynthParams, pg: PG, ver: Version) -> PG{
     return pg
       .hex(params::EQ, sp.associated_eq)
       .hex(dests::AMP, sp.amp)
       .enumeration("LIM", sp.limit.0, sp.limit.str())
       .hex(dests::PAN, sp.mixer_pan)
       .hex("DRY", sp.mixer_dry)
-      .hex("CHORUS", sp.mixer_chorus)
+      .hex(if ver.at_least(6, 1) { "MFX" } else { "CHORUS "}, 
+            sp.mixer_mfx)
       .hex("DELAY", sp.mixer_delay)
       .hex("REVERB", sp.mixer_reverb);
 }

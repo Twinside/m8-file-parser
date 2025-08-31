@@ -106,7 +106,7 @@ pub struct SynthParams {
 
     pub mixer_pan: u8,
     pub mixer_dry: u8,
-    pub mixer_chorus: u8,
+    pub mixer_mfx: u8,
     pub mixer_delay: u8,
     pub mixer_reverb: u8,
 
@@ -149,7 +149,7 @@ impl SynthParams {
 
             mixer_pan: 0,
             mixer_dry: 0,
-            mixer_chorus: 0,
+            mixer_mfx: 0,
             mixer_delay: 0,
             mixer_reverb: 0,
 
@@ -177,7 +177,7 @@ impl SynthParams {
 
             mixer_pan: 0,
             mixer_dry: 0,
-            mixer_chorus: 0,
+            mixer_mfx: 0,
             mixer_delay: 0,
             mixer_reverb: 0,
             associated_eq: 0xFF,
@@ -206,7 +206,7 @@ impl SynthParams {
 
             mixer_pan: reader.read(),
             mixer_dry: reader.read(),
-            mixer_chorus: reader.read(),
+            mixer_mfx: reader.read(),
             mixer_delay: reader.read(),
             mixer_reverb: reader.read(),
 
@@ -231,7 +231,7 @@ impl SynthParams {
 
         w.write(self.mixer_pan);
         w.write(self.mixer_dry);
-        w.write(self.mixer_chorus);
+        w.write(self.mixer_mfx);
         w.write(self.mixer_delay);
         w.write(self.mixer_reverb);
 
@@ -304,7 +304,7 @@ impl SynthParams {
 
             mixer_pan,
             mixer_dry,
-            mixer_chorus,
+            mixer_mfx: mixer_chorus,
             mixer_delay,
             mixer_reverb,
 

@@ -295,8 +295,67 @@ const FX_MIXER_COMMAND_V4 : [&'static str; 45] = [
     "NXT", // 0x47
 ];
 
+#[rustfmt::skip] // Keep constants with important order vertical for maintenance
+const FX_MIXER_COMMAND_V6_2 : [&'static str; 50] = [
+    "VMV",
+    "XMM",
+    "XMF",
+    "XMW",
+    "XMR",
+    "XDT",
+    "XDF",
+    "XDW",
+    "XDR",
+    "XRS",
+    "XRD",
+    "XRM",
+    "XRF",
+    "XRW",
+    "XRZ",
+    "VMX",
+    "VDE",
+    "VRE",
+    "VT1",
+    "VT2",
+    "VT3",
+    "VT4",
+    "VT5",
+    "VT6",
+    "VT7",
+    "VT8",
+    "DJC",
+    "VIN",
+    "IMX",
+    "IDE",
+    "IRE",
+    "VI2",
+    "IM2",
+    "ID2",
+    "IR2",
+    "USB",
+
+    "DJR", // 0x3F
+    "DJT", // 0x40
+    "EQM", // 0x41
+    "EQI", // 0x42
+    "INS", // 0x43
+    "RTO", // 0x44
+    "ARC", // 0x45
+    "GGR", // 0x46
+    "NXT", // 0x47
+
+    "XRH", // 0x48
+    "XMT", // 0x49
+    "OTT", 
+    "OTC", 
+    "OTI",
+];
+
 const COMMANDS_V4: [&'static str; concat_arrays_size!(SEQ_COMMAND_V3, FX_MIXER_COMMAND_V4)] =
     concat_arrays!(SEQ_COMMAND_V3, FX_MIXER_COMMAND_V4);
+
+const COMMANDS_V6_2: [&'static str; concat_arrays_size!(SEQ_COMMAND_V3, FX_MIXER_COMMAND_V6_2)] =
+    concat_arrays!(SEQ_COMMAND_V3, FX_MIXER_COMMAND_V6_2);
 
 impl FX {
     pub const V4_SIZE: usize = 2;
@@ -328,7 +387,11 @@ impl FX {
 
     /// Retrieve command names for a given version
     pub fn fx_command_names(ver: Version) -> FxCommands {
-        if ver.at_least(4, 0) {
+        if ver.at_least(6, 1) {
+            FxCommands {
+                commands: &COMMANDS_V6_2,
+            }
+        } else if ver.at_least(4, 0) {
             FxCommands {
                 commands: &COMMANDS_V4,
             }

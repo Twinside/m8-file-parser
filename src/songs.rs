@@ -256,6 +256,7 @@ impl Song {
         reader.read_bytes(18); // Skip
         let mixer_settings = MixerSettings::from_reader(reader, version)?;
 
+        reader.set_pos(V4_OFFSETS.groove);
         let grooves = (0..Self::N_GROOVES)
             .map(|i| Groove::from_reader(reader, i as u8))
             .collect::<M8Result<Vec<Groove>>>()?;
@@ -370,8 +371,8 @@ impl SongSteps {
     pub fn print_screen_from_to(&self, f: &mut fmt::Formatter<'_>, start: u8, end: u8) -> std::fmt::Result  {
         write!(f, "   1  2  3  4  5  6  7  8  \n")?;
 
-        for row in start .. min(0xFF, end + 1) {
-            self.print_row(f, row)?;
+        for row in start as usize .. min(0xFF, (end as usize) + 1) {
+            self.print_row(f, row as u8)?;
             writeln!(f, "")?;
         };
 
