@@ -2,6 +2,9 @@ use crate::instruments::common::*;
 use crate::reader::*;
 use crate::version::*;
 use crate::writer::Writer;
+use crate::SEND_COMMAND_NAMES;
+use crate::SEND_COMMAND_NAMES_6_2;
+use array_concat::concat_arrays;
 use num_enum::IntoPrimitive;
 use num_enum::TryFromPrimitive;
 
@@ -65,7 +68,7 @@ pub enum MacroSynthOsc {
 }
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
-const MACRO_SYNTH_COMMANDS : [&'static str;  CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] = [
+const MACRO_SYNTH_COMMANDS_BASE : [&'static str;  CommandPack::BASE_INSTRUMENT_COMMAND_COUNT - 3] = [
     "VOL",
     "PIT",
     "FIN",
@@ -80,16 +83,20 @@ const MACRO_SYNTH_COMMANDS : [&'static str;  CommandPack::BASE_INSTRUMENT_COMMAN
     "AMP",
     "LIM",
     "PAN",
-    "DRY",
+    "DRY"
+];
 
-    "SCH",
-    "SDL",
-    "SRV",
-
-    // EXTRA command
+#[rustfmt::skip] // Keep constants with important order vertical for maintenance
+const MACRO_SYNTH_COMMANDS_EXTRA : [&'static str; 2] = [
     "TRG",
     "ERR"
 ];
+
+const MACRO_SYNTH_COMMANDS : [&'static str;  CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] =
+    concat_arrays!(MACRO_SYNTH_COMMANDS_BASE, SEND_COMMAND_NAMES, MACRO_SYNTH_COMMANDS_EXTRA);
+
+const MACRO_SYNTH_COMMANDS_6_2 : [&'static str;  CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] =
+    concat_arrays!(MACRO_SYNTH_COMMANDS_BASE, SEND_COMMAND_NAMES_6_2, MACRO_SYNTH_COMMANDS_EXTRA);
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
 const DESTINATIONS : [&'static str; 15] = [
@@ -129,8 +136,12 @@ pub struct MacroSynth {
 impl MacroSynth {
     pub const MOD_OFFSET: usize = 30;
 
-    pub fn command_name(&self, _ver: Version) -> &'static [&'static str] {
-        &MACRO_SYNTH_COMMANDS
+    pub fn command_name(&self, ver: Version) -> &'static [&'static str] {
+        if ver.at_least(6, 1) {
+            &MACRO_SYNTH_COMMANDS_6_2 
+        } else {
+            &MACRO_SYNTH_COMMANDS
+        }
     }
 
     pub fn destination_names(&self, _ver: Version) -> &'static [&'static str] {

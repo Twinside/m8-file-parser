@@ -2,8 +2,8 @@
 
 ## 0.5
 
- - Analyzed/Fixed parsing of effect and mixer settings
- - (soon) handling of new M8 FW
+ - Analyzed/Fixed parsing of effect and mixer settings (with new elements)
+ - Handling of firmware 6.2
 
 ## 0.4 (hard fork)
 

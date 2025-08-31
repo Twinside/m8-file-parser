@@ -2,6 +2,9 @@ use crate::instruments::common::*;
 use crate::reader::*;
 use crate::version::*;
 use crate::writer::Writer;
+use crate::SEND_COMMAND_NAMES;
+use crate::SEND_COMMAND_NAMES_6_2;
+use array_concat::concat_arrays;
 use num_enum::IntoPrimitive;
 use num_enum::TryFromPrimitive;
 
@@ -102,7 +105,7 @@ pub struct WavSynth {
 }
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
-const WAVSYNTH_COMMAND_NAMES : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] = [
+const WAVSYNTH_COMMAND_NAMES_BASE : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT - 3] = [
     "VOL",
     "PIT",
     "FIN",
@@ -117,15 +120,20 @@ const WAVSYNTH_COMMAND_NAMES : [&'static str; CommandPack::BASE_INSTRUMENT_COMMA
     "AMP",
     "LIM",
     "PAN",
-    "DRY",
+    "DRY"
+];
 
-    "SCH",
-    "SDL",
-    "SRV",
-
+#[rustfmt::skip] // Keep constants with important order vertical for maintenance
+const WAVSYNTH_COMMAND_NAMES_EXTRA : [&'static str; 2] = [
     "SNC",
     "ERR"
 ];
+
+const WAVSYNTH_COMMAND_NAMES : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] =
+    concat_arrays!(WAVSYNTH_COMMAND_NAMES_BASE, SEND_COMMAND_NAMES, WAVSYNTH_COMMAND_NAMES_EXTRA);
+
+const WAVSYNTH_COMMAND_NAMES_6_2 : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] =
+    concat_arrays!(WAVSYNTH_COMMAND_NAMES_BASE, SEND_COMMAND_NAMES_6_2, WAVSYNTH_COMMAND_NAMES_EXTRA);
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
 const DESTINATIONS : [&'static str; 15] = [
@@ -166,8 +174,12 @@ const WAVSYNTH_FILTER_TYPES : [&'static str; 12] = [
 impl WavSynth {
     pub const MOD_OFFSET: usize = 30;
 
-    pub fn command_name(&self, _ver: Version) -> &'static [&'static str] {
-        &WAVSYNTH_COMMAND_NAMES
+    pub fn command_name(&self, ver: Version) -> &'static [&'static str] {
+        if ver.at_least(6, 1) {
+            &WAVSYNTH_COMMAND_NAMES_6_2
+        } else {
+            &WAVSYNTH_COMMAND_NAMES
+        }
     }
 
     pub fn destination_names(&self, _ver: Version) -> &'static [&'static str] {

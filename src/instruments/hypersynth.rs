@@ -6,8 +6,11 @@ use super::CommandPack;
 use super::Version;
 use crate::reader::*;
 use crate::writer::Writer;
+use crate::SEND_COMMAND_NAMES;
+use crate::SEND_COMMAND_NAMES_6_2;
 
 use arr_macro::arr;
+use array_concat::concat_arrays;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct HyperSynth {
@@ -28,7 +31,7 @@ pub struct HyperSynth {
 }
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
-const HYPERSYNTH_COMMAND_NAMES : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] = [
+const HYPERSYNTH_COMMAND_NAMES_BASE : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT - 3] = [
     "VOL",
     "PIT",
     "FIN",
@@ -43,19 +46,16 @@ const HYPERSYNTH_COMMAND_NAMES : [&'static str; CommandPack::BASE_INSTRUMENT_COM
     "AMP",
     "LIM",
     "PAN",
-    "DRY",
-    
-    "SCH",
-    "SDL",
-    "SRV",
-
-    // EXTRA
-    "CVO",
-    "SNC"
+    "DRY"
 ];
+    
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
-const HYPERSYNTH_COMMAND_NAMES_6 : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] = [
+const HYPERSYNTH_COMMAND_NAMES : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] =
+    concat_arrays!(HYPERSYNTH_COMMAND_NAMES_BASE, SEND_COMMAND_NAMES, ["CVO", "SNC"]);
+
+#[rustfmt::skip] // Keep constants with important order vertical for maintenance
+const HYPERSYNTH_COMMAND_NAMES_BASE_6 : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT - 3] = [
     "VOL",
     "PIT",
     "FIN",
@@ -70,16 +70,17 @@ const HYPERSYNTH_COMMAND_NAMES_6 : [&'static str; CommandPack::BASE_INSTRUMENT_C
     "AMP",
     "LIM",
     "PAN",
-    "DRY",
-    
-    "SCH",
-    "SDL",
-    "SRV",
-
-    // EXTRA
-    "SNC",
-    "ERR"
+    "DRY"
 ];
+    
+
+#[rustfmt::skip] // Keep constants with important order vertical for maintenance
+const HYPERSYNTH_COMMAND_NAMES_6 : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] =
+    concat_arrays!(HYPERSYNTH_COMMAND_NAMES_BASE_6, SEND_COMMAND_NAMES, ["SNC", "ERR"]);
+
+#[rustfmt::skip] // Keep constants with important order vertical for maintenance
+const HYPERSYNTH_COMMAND_NAMES_6_2 : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] =
+    concat_arrays!(HYPERSYNTH_COMMAND_NAMES_BASE_6, SEND_COMMAND_NAMES_6_2, ["SNC", "ERR"]);
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
 const DESTINATIONS : [&'static str; 15] = [
@@ -105,7 +106,9 @@ impl HyperSynth {
     const MOD_OFFSET: usize = 23;
 
     pub fn command_name(&self, ver: Version) -> &'static [&'static str] {
-        if ver.at_least(6, 0) {
+        if ver.at_least(6, 1) {
+            &HYPERSYNTH_COMMAND_NAMES_6_2
+        } else if ver.at_least(6, 0) {
             &HYPERSYNTH_COMMAND_NAMES_6
         } else {
             &HYPERSYNTH_COMMAND_NAMES

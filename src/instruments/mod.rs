@@ -84,6 +84,20 @@ pub mod dests {
     pub const MOD_BINV: &'static str = "MOD BINV";
 }
 
+#[rustfmt::skip] // Keep constants with important order vertical for maintenance
+pub(crate) const SEND_COMMAND_NAMES : [&'static str; 3] = [
+    "SCH",
+    "SDL",
+    "SRV"
+];
+
+#[rustfmt::skip] // Keep constants with important order vertical for maintenance
+pub(crate) const SEND_COMMAND_NAMES_6_2 : [&'static str; 3] = [
+    "SMX",
+    "SDL",
+    "SRV"
+];
+
 /// This structure will aggregate for every instrument and its
 /// modulator the name of the commands associated to it.
 #[derive(Clone, Copy)]

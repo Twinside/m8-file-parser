@@ -2,6 +2,9 @@ use crate::instruments::common::*;
 use crate::reader::*;
 use crate::version::*;
 use crate::writer::Writer;
+use crate::SEND_COMMAND_NAMES;
+use crate::SEND_COMMAND_NAMES_6_2;
+use array_concat::concat_arrays;
 use num_enum::IntoPrimitive;
 use num_enum::TryFromPrimitive;
 
@@ -48,7 +51,7 @@ pub struct Sampler {
 }
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
-const SAMPLER_FX_COMMANDS : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] = [
+const SAMPLER_FX_COMMANDS_BASE : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT - 3] = [
     "VOL",
     "PIT",
     "FIN",
@@ -63,16 +66,20 @@ const SAMPLER_FX_COMMANDS : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_
     "AMP",
     "LIM",
     "PAN",
-    "DRY",
+    "DRY"
+];
 
-    "SCH",
-    "SDL",
-    "SRV",
-
-    // EXTRA command
+#[rustfmt::skip] // Keep constants with important order vertical for maintenance
+const SAMPLER_FX_COMMANDS_EXTRA : [&'static str; 2] = [
     "SLI",
     "ERR"
 ];
+
+const SAMPLER_FX_COMMANDS : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] =
+    concat_arrays!(SAMPLER_FX_COMMANDS_BASE , SEND_COMMAND_NAMES, SAMPLER_FX_COMMANDS_EXTRA );
+
+const SAMPLER_FX_COMMANDS_6_2 : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] =
+    concat_arrays!(SAMPLER_FX_COMMANDS_BASE , SEND_COMMAND_NAMES_6_2, SAMPLER_FX_COMMANDS_EXTRA );
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
 const DESTINATIONS : [&'static str; 14] = [
@@ -96,8 +103,12 @@ const DESTINATIONS : [&'static str; 14] = [
 impl Sampler {
     pub const MOD_OFFSET: usize = 29;
 
-    pub fn command_name(&self, _ver: Version) -> &'static [&'static str] {
-        &SAMPLER_FX_COMMANDS
+    pub fn command_name(&self, ver: Version) -> &'static [&'static str] {
+        if ver.at_least(6, 1) {
+            &SAMPLER_FX_COMMANDS_6_2
+        } else {
+            &SAMPLER_FX_COMMANDS
+        }
     }
 
     pub fn destination_names(&self, _ver: Version) -> &'static [&'static str] {

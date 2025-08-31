@@ -2,6 +2,8 @@ use crate::instruments::common::*;
 use crate::reader::*;
 use crate::version::*;
 use crate::writer::Writer;
+use crate::SEND_COMMAND_NAMES;
+use crate::SEND_COMMAND_NAMES_6_2;
 use array_concat::concat_arrays;
 use num_enum::IntoPrimitive;
 use num_enum::TryFromPrimitive;
@@ -138,7 +140,7 @@ pub enum FMWave {
 }
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
-const FM_FX_BASE_COMMANDS : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT] = [
+const FM_FX_BASE_COMMANDS : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT - 3] = [
     "VOL",
     "PIT",
     "FIN",
@@ -154,19 +156,19 @@ const FM_FX_BASE_COMMANDS : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_
     "LIM",
     "PAN",
     "DRY",
-    
-    "SCH",
-    "SDL",
-    "SRV",
 ];
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
 const FM_FX_COMMANDS_UPTO_5 : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 1] =
-    concat_arrays!(FM_FX_BASE_COMMANDS, ["FMP"]);
+    concat_arrays!(FM_FX_BASE_COMMANDS, SEND_COMMAND_NAMES, ["FMP"]);
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
 const FM_FX_COMMANDS_FROM_6 : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] =
-    concat_arrays!(FM_FX_BASE_COMMANDS, ["SNC", "ERR"]);
+    concat_arrays!(FM_FX_BASE_COMMANDS, SEND_COMMAND_NAMES, ["SNC", "ERR"]);
+
+#[rustfmt::skip] // Keep constants with important order vertical for maintenance
+const FM_FX_COMMANDS_FROM_6_2 : [&'static str; CommandPack::BASE_INSTRUMENT_COMMAND_COUNT + 2] =
+    concat_arrays!(FM_FX_BASE_COMMANDS, SEND_COMMAND_NAMES_6_2, ["SNC", "ERR"]);
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
 const DESTINATIONS : [&'static str; 15] = [
@@ -220,7 +222,9 @@ impl FMSynth {
     const MOD_OFFSET: usize = 2;
 
     pub fn command_name(&self, ver: Version) -> &'static [&'static str] {
-        if ver.at_least(6, 0) {
+        if ver.at_least(6, 1) {
+            &FM_FX_COMMANDS_FROM_6_2
+        } else if ver.at_least(6, 0) {
             &FM_FX_COMMANDS_FROM_6
         } else {
             &FM_FX_COMMANDS_UPTO_5
