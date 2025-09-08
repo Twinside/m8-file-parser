@@ -2,6 +2,7 @@ use crate::eq::Equ;
 use crate::reader::*;
 use crate::version::*;
 use crate::writer::Writer;
+use crate::ReferenceTemplating;
 use crate::Table;
 use crate::TableView;
 use crate::V4_1_OFFSETS;
@@ -196,7 +197,8 @@ impl InstrumentWithEq {
         TableView {
             table: &self.table,
             table_index: 0,
-            instrument: self.instrument.instr_command_text(self.version)
+            instrument: self.instrument.instr_command_text(self.version),
+            templates: ReferenceTemplating::default()
         }
     }
 }

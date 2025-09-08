@@ -1,4 +1,4 @@
-use crate::reader::*;
+use crate::{reader::*, ReferenceTemplating};
 use crate::remapper::{EqMapping, InstrumentMapping, TableMapping};
 use crate::version::*;
 use crate::writer::Writer;
@@ -376,12 +376,15 @@ impl FX {
         self.command == 0xFF
     }
 
-    pub fn print(&self, fx: FxCommands, pack: CommandPack) -> String {
+    pub fn print(&self, fx: FxCommands, pack: CommandPack, templates: &ReferenceTemplating) -> String {
         if self.is_empty() {
             format!("---  ")
         } else {
             let c = self.format_command(fx, pack);
-            format!("{}{:02x}", c, self.value)
+            match templates.try_template(&c, self.value) {
+                Some(templated) => templated,
+                None => format!("{}{:02x}", c, self.value)
+            }
         }
     }
 

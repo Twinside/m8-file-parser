@@ -368,14 +368,14 @@ fn try_allocate_rev(allocation_state: &[bool], previous_id: u8) -> Option<usize>
 
 /// These commands track instruments and must include the
 /// target instrument to fully reconstruct the sound
-const INSTRUMENT_TRACKING_COMMAND_NAMES: [&'static str; 2] = ["INS", "NXT"];
+pub(crate) const INSTRUMENT_TRACKING_COMMAND_NAMES: [&'static str; 2] = ["INS", "NXT"];
 
 /// This command an external "table", that also must be copied
 /// in order to properly reproduce the phrase
-const TABLE_TRACKING_COMMAND_NAMES: [&'static str; 2] = ["TBX", "TBL"];
+pub(crate) const TABLE_TRACKING_COMMAND_NAMES: [&'static str; 2] = ["TBX", "TBL"];
 
 /// These commands track EQs, that must be copied, yada yada.
-const EQ_TRACKING_COMMAND_NAMES: [&'static str; 2] = ["EQI", "EQM"];
+pub(crate) const EQ_TRACKING_COMMAND_NAMES: [&'static str; 2] = ["EQI", "EQM"];
 
 /// brief struture to hold structures used to allocate instruments
 struct InstrumentAllocatorState<'a> {
@@ -847,7 +847,7 @@ impl Remapper {
         }
 
         // remap eq in instr
-        let eq_count = song.eq_count();
+        let eq_count = song.eq_count() - 4;
         for instr_id in 0..Song::N_INSTRUMENTS {
             let instr = &mut song.instruments[instr_id];
 

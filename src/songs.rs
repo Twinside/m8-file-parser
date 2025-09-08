@@ -9,6 +9,9 @@ use crate::remapper::EqMapping;
 use crate::remapper::InstrumentMapping;
 use crate::remapper::PhraseMapping;
 use crate::remapper::TableMapping;
+use crate::remapper::EQ_TRACKING_COMMAND_NAMES;
+use crate::remapper::INSTRUMENT_TRACKING_COMMAND_NAMES;
+use crate::remapper::TABLE_TRACKING_COMMAND_NAMES;
 use crate::scale::*;
 use crate::settings::*;
 use crate::version::*;
@@ -143,12 +146,18 @@ impl Song {
     pub const N_MIDI_MAPPINGS: usize = 128;
 
     pub fn phrase_view(&self, ix: usize) -> PhraseView<'_> {
+        self.phrase_view_with_templates(ix, ReferenceTemplating::default())
+    }
+
+    pub fn phrase_view_with_templates(&self, ix: usize, templates: ReferenceTemplating) -> PhraseView<'_> {
         PhraseView {
             phrase: &self.phrases[ix],
             phrase_id: ix,
             instruments: &self.instruments,
+            templates
         }
     }
+
 
     pub fn offsets(&self) -> &'static Offsets {
         if self.version.at_least(4, 1) {
@@ -162,7 +171,7 @@ impl Song {
         self.offsets().eq_count()
     }
 
-    pub fn table_view(&self, ix: usize) -> TableView<'_> {
+    pub fn table_view_with_templates(&self, ix: usize, templates: ReferenceTemplating) -> TableView<'_> {
         TableView {
             table: &self.tables[ix],
             table_index: ix,
@@ -171,7 +180,12 @@ impl Song {
             } else {
                 CommandPack::default()
             },
+            templates
         }
+    }
+
+    pub fn table_view(&self, ix: usize) -> TableView<'_> {
+        self.table_view_with_templates(ix, ReferenceTemplating::default())
     }
 
     pub fn eq_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -566,7 +580,11 @@ impl Phrase {
         }
     }
 
-    pub fn print_screen(&self, f: &mut fmt::Formatter<'_>, instruments: &[Instrument]) -> std::fmt::Result {
+    pub(crate) fn print_screen(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+        instruments: &[Instrument],
+        templates: &ReferenceTemplating) -> std::fmt::Result {
         let mut cmd_pack = CommandPack::default();
         let fx_commands = FX::fx_command_names(self.version);
 
@@ -580,7 +598,7 @@ impl Phrase {
                 cmd_pack = instruments[instrument].instr_command_text(self.version);
             }
 
-            step.print(f, i as u8, fx_commands, cmd_pack)?;
+            step.print(f, i as u8, fx_commands, cmd_pack, templates)?;
             write!(f, "\n")?;
         }
 
@@ -622,12 +640,13 @@ pub struct PhraseView<'a> {
     phrase: &'a Phrase,
     phrase_id: usize,
     instruments: &'a [Instrument],
+    templates: ReferenceTemplating
 }
 
 impl<'a> fmt::Display for PhraseView<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PHRASE {:02X}\n\n", self.phrase_id)?;
-        self.phrase.print_screen(f, self.instruments)
+        self.phrase.print_screen(f, self.instruments, &self.templates)
     }
 }
 
@@ -654,16 +673,23 @@ impl Step {
         [self.fx1, self.fx2, self.fx3]
     }
 
-    pub fn print(&self,  f: &mut fmt::Formatter<'_>, row: u8, fx_cmds: FxCommands, cmd_pack: CommandPack) -> std::fmt::Result {
+    pub fn print(&self,
+        f: &mut fmt::Formatter<'_>,
+        row: u8,
+        fx_cmds: FxCommands,
+        cmd_pack: CommandPack,
+        templates: &ReferenceTemplating) -> std::fmt::Result {
         let velocity = if self.velocity == 255 {
             format!("--")
         } else {
             format!("{:02x}", self.velocity)
         };
+
         let instrument = if self.instrument == 255 {
             format!("--")
         } else {
-            format!("{:02x}", self.instrument)
+            templates.try_instrument_templating(self.instrument)
+                .unwrap_or_else(|| format!("{:02x}", self.instrument))
         };
 
         write!(
@@ -673,9 +699,9 @@ impl Step {
             self.note,
             velocity,
             instrument,
-            self.fx1.print(fx_cmds, cmd_pack),
-            self.fx2.print(fx_cmds, cmd_pack),
-            self.fx3.print(fx_cmds, cmd_pack)
+            self.fx1.print(fx_cmds, cmd_pack, templates),
+            self.fx2.print(fx_cmds, cmd_pack, templates),
+            self.fx3.print(fx_cmds, cmd_pack, templates)
         )
     }
 
@@ -835,14 +861,18 @@ impl Table {
         }
     }
 
-    pub fn print_screen(&self, f: &mut fmt::Formatter<'_>, cmd: CommandPack) -> std::fmt::Result {
+    pub(crate) fn print_screen(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+        cmd: CommandPack,
+        templates: &ReferenceTemplating) -> std::fmt::Result {
         let fx_cmd = FX::fx_command_names(self.version);
         write!(f, "  N  V  FX1   FX2   FX3  \n")?;
 
         for i in 0..16 {
             let step = &self.steps[i];
 
-            step.print(f, i as u8, fx_cmd, cmd)?;
+            step.print(f, i as u8, fx_cmd, cmd, templates)?;
             write!(f, "\n")?
         }
 
@@ -863,16 +893,82 @@ impl Table {
     }
 }
 
+pub enum ReferenceTemplating {
+  NoTemplate,
+  WithTemplates {
+    instrument: Option<String>,
+    instrument_command: Option<String>,
+    table: Option<String>,
+    eq: Option<String>,
+  }
+}
+
+impl ReferenceTemplating {
+    fn apply_cmd_template(template: &str, cmd: &str, value: u8) -> Option<String> {
+        Some(template
+            .replace("{HEX}", &format!("{:02X}", value))
+            .replace("{CMD}", cmd))
+    }
+
+    pub fn try_instrument_templating(&self, value: u8) -> Option<String> {
+        match self {
+            ReferenceTemplating::NoTemplate => None,
+            ReferenceTemplating::WithTemplates { instrument: Some(it), instrument_command: _, table: _, eq: _ } => {
+                Some(it.replace("{HEX}", &format!("{:02X}", value)))
+            }
+            ReferenceTemplating::WithTemplates { instrument: _, instrument_command: _, table: _, eq: _ } => None
+        }
+    }
+
+    pub fn try_template(&self, command: &str, value: u8) -> Option<String> {
+        let (instr, table, eqq) = match self {
+            ReferenceTemplating::NoTemplate => return None,
+            ReferenceTemplating::WithTemplates {
+                instrument: _,
+                instrument_command,
+                table,
+                eq } =>
+                (instrument_command, table, eq)
+        };
+
+        if let Some(it) = instr {
+          if INSTRUMENT_TRACKING_COMMAND_NAMES.iter().any(|ic| *ic == command) {
+            return ReferenceTemplating::apply_cmd_template(&it, command, value)
+          }
+        }
+
+        if let Some(tt) = table {
+          if TABLE_TRACKING_COMMAND_NAMES.iter().any(|ic| *ic == command) {
+            return ReferenceTemplating::apply_cmd_template(&tt, command, value)
+          }
+        }
+
+        if let Some(et) = eqq {
+          if EQ_TRACKING_COMMAND_NAMES.iter().any(|ic| *ic == command) {
+            return ReferenceTemplating::apply_cmd_template(&et, command, value)
+          }
+        }
+
+        None
+    }
+}
+
+impl Default for ReferenceTemplating {
+    fn default() -> Self { Self::NoTemplate }
+}
+
 pub struct TableView<'a> {
     pub(crate) table: &'a Table,
     pub(crate) table_index: usize,
     pub(crate) instrument: CommandPack,
+
+    pub(crate) templates: ReferenceTemplating,
 }
 
 impl<'a> fmt::Display for TableView<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "TABLE {:02X}\n\n", self.table_index)?;
-        self.table.print_screen(f,self.instrument)
+        self.table.print_screen(f,self.instrument, &self.templates)
     }
 }
 
@@ -938,7 +1034,8 @@ impl TableStep {
         f: &mut fmt::Formatter<'_>,
         row: u8,
         fx_cmd: FxCommands,
-        cmds: CommandPack) -> std::fmt::Result {
+        cmds: CommandPack,
+        templates: &ReferenceTemplating) -> std::fmt::Result {
 
         let transpose = if self.transpose == 255 {
             format!("--")
@@ -958,9 +1055,9 @@ impl TableStep {
             row,
             transpose,
             velocity,
-            self.fx1.print(fx_cmd, cmds),
-            self.fx2.print(fx_cmd, cmds),
-            self.fx3.print(fx_cmd, cmds)
+            self.fx1.print(fx_cmd, cmds, templates),
+            self.fx2.print(fx_cmd, cmds, templates),
+            self.fx3.print(fx_cmd, cmds, templates)
         )
     }
 
