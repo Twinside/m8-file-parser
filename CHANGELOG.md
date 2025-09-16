@@ -3,7 +3,7 @@
 ## 0.5
 
  - Analyzed/Fixed parsing of effect and mixer settings (with new elements)
- - Handling of firmware 6.2
+ - Handling of firmware 6.2 (OTT and new added commands)
 
 ## 0.4 (hard fork)
 

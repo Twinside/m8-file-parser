@@ -8,7 +8,7 @@
 //!
 //! E.g.:
 //! ```
-//! use m8_files::*;
+//! use m8_file_parser::*;
 //!
 //! let mut f = std::fs::File::open("./examples/songs/TEST-FILE.m8s").unwrap();
 //! let song = Song::read(&mut f).unwrap();
@@ -19,8 +19,8 @@
 //! the whole file in memory, in order to be able to overwrite it
 //!
 //! ```
-//! use m8_files::*;
-//! use m8_files::remapper::Remapper;
+//! use m8_file_parser::*;
+//! use m8_file_parser::remapper::Remapper;
 //! let mut song_data = std::fs::read("./examples/songs/V4EMPTY.m8s").unwrap();
 //! let mut song_reader = reader::Reader::new(song_data.clone());
 //! let mut song = Song::read_from_reader(&mut song_reader).unwrap();
@@ -47,12 +47,12 @@
 //! a chain from a song to another
 //!
 //! ```
-//! use m8_files::*;
-//! use m8_files::remapper::Remapper;
+//! use m8_file_parser::*;
+//! use m8_file_parser::remapper::Remapper;
 //!
 //! let mut from_file = std::fs::File::open("./examples/songs/TEST-FILE.m8s").unwrap();
 //! let from_song = Song::read(&mut from_file).unwrap();
-//! let mut empty_file = std::fs::File::open("./examples/songs/V4EMPTY.m8s").unwrap();
+//! let mut empty_file = std::fs::File::open("./examples/songs/V6_2EMPTY.m8s").unwrap();
 //! let mut to_song = Song::read(&mut empty_file).unwrap();
 //! let chain : u8 = 12;
 //! let mapping =

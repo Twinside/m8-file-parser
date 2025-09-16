@@ -1,6 +1,8 @@
 # m8-file-parser
 
-Reads [Dirtwave M8](https://dirtywave.com/) files into Rust structs.
+[![Crates.io](https://img.shields.io/crates/v/m8-file-parser)](https://crates.io/crates/m8-file-parser)
+
+Reads [Dirtwave M8](https://dirtywave.com/) files into Rust structs. Covers M8 firmware version 4.0 to 6.0
 
 Big thanks to [m8-js](https://github.com/whitlockjc/m8-js) who did all the real dirty work.
 
@@ -10,7 +12,7 @@ Big thanks to AlexCharlton for the original version of the package [m8-files](ht
 
 Add to your `Cargo.toml`:
 ```
-m8-file-parser = "0.4"
+m8-file-parser = "0.5"
 ```
 Or
 ```
