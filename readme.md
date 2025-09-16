@@ -1,6 +1,7 @@
 # m8-file-parser
 
 [![Crates.io](https://img.shields.io/crates/v/m8-file-parser)](https://crates.io/crates/m8-file-parser)
+[![Docs.rs](https://docs.rs/m8-file-parser/badge.svg)](https://docs.rs/m8-file-parser)
 
 Reads [Dirtwave M8](https://dirtywave.com/) files into Rust structs. Covers M8 firmware version 4.0 to 6.0
 
