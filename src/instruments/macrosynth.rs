@@ -137,7 +137,7 @@ impl MacroSynth {
     pub const MOD_OFFSET: usize = 30;
 
     pub fn command_name(&self, ver: Version) -> &'static [&'static str] {
-        if ver.at_least(6, 1) {
+        if ver.after(&FIRMWARE_6_2_SONG_VERSION) {
             &MACRO_SYNTH_COMMANDS_6_2 
         } else {
             &MACRO_SYNTH_COMMANDS
@@ -196,7 +196,7 @@ impl MacroSynth {
         let degrade = reader.read();
         let redux = reader.read();
 
-        let synth_params = if version.at_least(3, 0) {
+        let synth_params = if version.after(&FIRMWARE_3_0_SONG_VERSION) {
             SynthParams::from_reader3(
                 ver,
                 reader,

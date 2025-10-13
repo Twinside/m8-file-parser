@@ -222,9 +222,9 @@ impl FMSynth {
     const MOD_OFFSET: usize = 2;
 
     pub fn command_name(&self, ver: Version) -> &'static [&'static str] {
-        if ver.at_least(6, 1) {
+        if ver.after(&FIRMWARE_6_2_SONG_VERSION) {
             &FM_FX_COMMANDS_FROM_6_2
-        } else if ver.at_least(6, 0) {
+        } else if ver.after(&FIRMWARE_6_0_SONG_VERSION) {
             &FM_FX_COMMANDS_FROM_6
         } else {
             &FM_FX_COMMANDS_UPTO_5
@@ -325,7 +325,7 @@ impl FMSynth {
         let mod3 = reader.read();
         let mod4 = reader.read();
 
-        let synth_params = if version.at_least(3, 0) {
+        let synth_params = if version.after(&FIRMWARE_3_0_SONG_VERSION) {
             SynthParams::from_reader3(
                 ver,
                 reader,

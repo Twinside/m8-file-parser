@@ -160,7 +160,7 @@ impl Song {
 
 
     pub fn offsets(&self) -> &'static Offsets {
-        if self.version.at_least(4, 1) {
+        if self.version.after(&FIRMWARE_5_0_SONG_VERSION) {
             &V4_1_OFFSETS
         } else {
             &V4_OFFSETS
@@ -216,7 +216,7 @@ impl Song {
     }
 
     pub fn write(&self, w: &mut Writer) -> Result<(), String> {
-        if !self.version.at_least(4, 0) {
+        if !self.version.after(&FIRMWARE_4_0_SONG_VERSION) {
             Err(String::from(
                 "Only version 4.0 or above song can be rewritten",
             ))
@@ -312,8 +312,8 @@ impl Song {
                 .collect()
         };
 
-        let eqs = if version.at_least(4, 0) {
-            let ofs = if version.at_least(4, 1) {
+        let eqs = if version.after(&FIRMWARE_4_0_SONG_VERSION) {
+            let ofs = if version.after(&FIRMWARE_5_0_SONG_VERSION ) {
                 &V4_1_OFFSETS
             } else {
                 &V4_OFFSETS
@@ -574,6 +574,34 @@ impl Phrase {
         self.steps.iter().all(|s| s.is_empty())
     }
 
+    /// Initialize an empty phrase with a given version
+    pub fn default_ver(version: Version) -> Phrase {
+        Phrase {
+            version,
+            steps: [
+                Step::default(),
+                Step::default(),
+                Step::default(),
+                Step::default(),
+
+                Step::default(),
+                Step::default(),
+                Step::default(),
+                Step::default(),
+
+                Step::default(),
+                Step::default(),
+                Step::default(),
+                Step::default(),
+
+                Step::default(),
+                Step::default(),
+                Step::default(),
+                Step::default(),
+            ]
+        }
+    }
+
     pub fn clear(&mut self) {
         for s in &mut self.steps {
             s.clear();
@@ -830,6 +858,34 @@ pub struct Table {
 }
 impl Table {
     pub const V4_SIZE: usize = 16 * TableStep::V4_SIZE;
+
+    /// Initialize an empty table with a given version
+    pub fn default_ver(version: Version) -> Table {
+        Table {
+            version,
+            steps: [
+                TableStep::default(),
+                TableStep::default(),
+                TableStep::default(),
+                TableStep::default(),
+
+                TableStep::default(),
+                TableStep::default(),
+                TableStep::default(),
+                TableStep::default(),
+
+                TableStep::default(),
+                TableStep::default(),
+                TableStep::default(),
+                TableStep::default(),
+
+                TableStep::default(),
+                TableStep::default(),
+                TableStep::default(),
+                TableStep::default(),
+            ]
+        }
+    }
 
     pub fn is_empty(&self) -> bool {
         self.steps.iter().all(|s| s.is_empty())

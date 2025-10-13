@@ -13,7 +13,7 @@ fn main() {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-    let args: Vec<String> = env::args().collect();
+    let _args: Vec<String> = env::args().collect();
 
     let mut ffrom = File::open("./examples/songs/TRACKEQ.m8s")?;
     let from = Song::read(&mut ffrom)?;
@@ -22,7 +22,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     let mut to = Song::read(&mut fto)?;
 
 
-    let mut remapper =
+    let remapper =
         Remapper::create(&from, &to, vec![0].iter());
 
     remapper.unwrap().apply(&from, &mut to);

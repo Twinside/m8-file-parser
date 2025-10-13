@@ -31,14 +31,38 @@ impl fmt::Debug for Version {
     }
 }
 
+pub const FIRMWARE_3_0_SONG_VERSION : Version =
+    Version { major: 3, minor: 0, patch: 0 };
+
+/// eq introduction
+pub const FIRMWARE_4_0_SONG_VERSION : Version =
+    Version { major: 4, minor: 0, patch: 0 };
+
+/// 128 eq support
+pub const FIRMWARE_5_0_SONG_VERSION : Version =
+    Version { major: 4, minor: 1, patch: 0 };
+
+pub const FIRMWARE_6_0_SONG_VERSION : Version =
+    Version { major: 6, minor: 0, patch: 0 };
+
+pub const FIRMWARE_6_2_SONG_VERSION : Version =
+    Version { major: 6, minor: 1, patch: 0 };
+
 impl Version {
     pub const SIZE: usize = 14;
 
+    pub fn new(major: u8, minor: u8) -> Version {
+        Version { major, minor, patch: 0 }
+    }
+
     pub fn write(&self, w: &mut Writer) {
-        w.write(self.major);
+        w.write_string("M8VERSION", 10);
+
         w.write((self.minor << 4) | self.patch);
+        w.write(self.major);
+
         w.write(0);
-        w.write(0);
+        w.write(0x10); // why? don't know, but borked result if not written
     }
 
     pub fn from_reader(reader: &mut Reader) -> M8Result<Self> {
@@ -55,6 +79,10 @@ impl Version {
             minor,
             patch,
         })
+    }
+
+    pub fn after(&self, other: &Version) -> bool {
+        self.at_least(other.major, other.minor)
     }
 
     pub fn at_least(&self, major: u8, minor: u8) -> bool {

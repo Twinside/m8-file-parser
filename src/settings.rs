@@ -1,6 +1,6 @@
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
-use crate::{reader::*, Version};
+use crate::{reader::*, Version, FIRMWARE_4_0_SONG_VERSION, FIRMWARE_6_0_SONG_VERSION, FIRMWARE_6_2_SONG_VERSION};
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct MidiSettings {
@@ -98,7 +98,7 @@ impl MixerSettings {
         let dj_peak = reader.read();
         let dj_filter_type = reader.read();
 
-        let limiter_conf = if !ver.at_least(6, 0) {
+        let limiter_conf = if !ver.after(&FIRMWARE_6_0_SONG_VERSION) {
             None
         } else {
             let limiter_attack = reader.read();
@@ -107,7 +107,7 @@ impl MixerSettings {
             Some((limiter_attack, limiter_release, soft_clip != 0))
         };
 
-        let ott_level = if ver.at_least(6, 1) {
+        let ott_level = if ver.after(&FIRMWARE_6_2_SONG_VERSION) {
             Some(reader.read())
         } else {
             None
@@ -234,7 +234,7 @@ impl EffectsSettings {
         reader.read_bytes(3); //unused
 
         let delay_filter=  EffectFilter::from_reader(reader)?;
-        let delay_filter = if version.at_least(4, 0) {
+        let delay_filter = if version.after(&FIRMWARE_4_0_SONG_VERSION) {
             None
         } else {
             Some(delay_filter)
@@ -248,7 +248,7 @@ impl EffectsSettings {
         reader.read_bytes(1); //unused
 
         let reverb_filter= EffectFilter::from_reader(reader)?;
-        let reverb_filter = if version.at_least(4, 0) {
+        let reverb_filter = if version.after(&FIRMWARE_4_0_SONG_VERSION) {
             None
         } else {
             Some(reverb_filter)
@@ -260,7 +260,7 @@ impl EffectsSettings {
         let reverb_mod_freq = reader.read();
         let reverb_width = reader.read();
         let (reverb_shimmer, ott_configuration, mfx_kind) =
-            if version.at_least(6, 1) {
+            if version.after(&FIRMWARE_6_2_SONG_VERSION) {
                 let shimmer = Some(reader.read());
                 let ott = OttConfiguration::from_reader(reader, version)?;
                 let mfx = reader.read();

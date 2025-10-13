@@ -4,9 +4,21 @@ pub struct Writer {
 }
 
 impl Writer {
+    /// Size at fw 6.2
+    pub const INSTRUMENT_FILE_SIZE : usize = 357;
+    pub const INSTRUMENT_FILE_SIZE_WITH_EQ : usize = 375;
+
     /// Initialize the writer from a loaded song
     pub fn new(v: Vec<u8>) -> Writer {
         Writer { buffer: v, pos: 0 }
+    }
+
+    pub fn new_instrument_writer(with_eq: bool) -> Writer {
+        let file_size =
+            if with_eq { Writer::INSTRUMENT_FILE_SIZE_WITH_EQ }
+            else { Writer::INSTRUMENT_FILE_SIZE };
+
+        Writer { buffer: vec![0; file_size], pos: 0 }
     }
 
     /// Terminate writing and return the buffer

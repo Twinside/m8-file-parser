@@ -148,7 +148,7 @@ impl MIDIOut {
         let program_change = reader.read();
         reader.read_bytes(3); // discard
         let custom_cc = arr![ControlChange::from_reader(reader)?; 10];
-        let mods = if version.at_least(3, 0) {
+        let mods = if version.after(&FIRMWARE_3_0_SONG_VERSION) {
             SynthParams::mod_only3(reader, MIDIOut::MOD_OFFSET)?
         } else {
             SynthParams::mod_only2(reader)?

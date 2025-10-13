@@ -1,7 +1,7 @@
 [package]
 name = "m8-file-parser"
 description = "Parse the Dirtywave M8's file formats (from M8 FW version 4 to 6)"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2021"
 repository = "https://github.com/Twinside/m8-file-parser"
 homepage = "https://github.com/Twinside/m8-file-parser"

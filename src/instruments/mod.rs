@@ -201,6 +201,18 @@ impl InstrumentWithEq {
             templates: ReferenceTemplating::default()
         }
     }
+
+    pub fn write(&self, w: &mut Writer) {
+        self.version.write(w);
+        let start_pos = w.pos();
+        self.instrument.write(self.version, w);
+        w.seek(start_pos + Instrument::INSTRUMENT_MEMORY_SIZE);
+        self.table.write(w);
+
+        if let Some(eq) = &self.eq {
+            eq.write(w);
+        }
+    }
 }
 
 impl Instrument {
@@ -338,7 +350,7 @@ impl Instrument {
 
         let eq = match V4_1_OFFSETS.instrument_file_eq_offset {
             None => None,
-            Some(ofs) if version.at_least(4, 0) => {
+            Some(ofs) if version.after(&FIRMWARE_4_0_SONG_VERSION) => {
                 if reader.len() >= ofs + Equ::V4_SIZE {
                     reader.set_pos(ofs);
                     Some(Equ::from_reader(reader))
@@ -373,10 +385,10 @@ impl Instrument {
             )?),
             0x03 => Self::MIDIOut(MIDIOut::from_reader(version, reader, number, version)?),
             0x04 => Self::FMSynth(FMSynth::from_reader(version, reader, number, version)?),
-            0x05 if version.at_least(3, 0) => {
+            0x05 if version.after(&FIRMWARE_3_0_SONG_VERSION) => {
                 Self::HyperSynth(HyperSynth::from_reader(version, reader, number)?)
             }
-            0x06 if version.at_least(3, 0) => {
+            0x06 if version.after(&FIRMWARE_3_0_SONG_VERSION) => {
                 Self::External(ExternalInst::from_reader(version, reader, number)?)
             }
             0xFF => Self::None,

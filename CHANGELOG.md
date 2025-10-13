@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.1
+
+ - Fixed Version writing.
+ - Adding method to create fresh tables/phrase from a version.
+
 ## 0.5
 
  - Analyzed/Fixed parsing of effect and mixer settings (with new elements)

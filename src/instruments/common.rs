@@ -1,7 +1,7 @@
 use std::fmt;
 
 use super::modulator::*;
-use crate::reader::*;
+use crate::{reader::*, FIRMWARE_5_0_SONG_VERSION, FIRMWARE_4_0_SONG_VERSION };
 use crate::writer::Writer;
 use crate::Version;
 use arr_macro::arr;
@@ -15,10 +15,10 @@ pub struct TranspEq {
 
 impl TranspEq {
     pub fn from(ver: Version, transpose: bool, eq: u8) -> TranspEq {
-        if ver.at_least(4, 1) {
+        if ver.after(&FIRMWARE_5_0_SONG_VERSION) {
             Self {
                 transpose,
-                eq: 0x00,
+                eq: 0x80,
             }
         } else {
             Self { transpose, eq }
@@ -26,10 +26,10 @@ impl TranspEq {
     }
 
     pub fn from_version(ver: Version, value: u8) -> Self {
-        if ver.at_least(4, 1) {
+        if ver.after(&FIRMWARE_5_0_SONG_VERSION) {
             Self {
                 transpose: (value & 1) != 0,
-                eq: 0x00,
+                eq: 0x80,
             }
         } else {
             Self {
@@ -236,7 +236,7 @@ impl SynthParams {
         w.write(self.mixer_reverb);
 
         let writer_pos = w.pos();
-        if ver.at_least(4, 1) {
+        if ver.after(&FIRMWARE_5_0_SONG_VERSION) {
             w.seek(writer_pos + mod_offset - 1);
             w.write(self.associated_eq);
         }
@@ -277,10 +277,10 @@ impl SynthParams {
         let mixer_reverb = reader.read();
 
         let reader_pos = reader.pos();
-        let associated_eq = if version.at_least(4, 1) {
+        let associated_eq = if version.after(&FIRMWARE_5_0_SONG_VERSION) {
             reader.set_pos(reader_pos + mod_offset - 1);
             reader.read()
-        } else if version.at_least(4, 0) {
+        } else if version.after(&FIRMWARE_4_0_SONG_VERSION) {
             eq
         } else {
             0xFF

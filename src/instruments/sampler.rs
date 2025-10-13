@@ -104,7 +104,7 @@ impl Sampler {
     pub const MOD_OFFSET: usize = 29;
 
     pub fn command_name(&self, ver: Version) -> &'static [&'static str] {
-        if ver.at_least(6, 1) {
+        if ver.after(&FIRMWARE_6_2_SONG_VERSION) {
             &SAMPLER_FX_COMMANDS_6_2
         } else {
             &SAMPLER_FX_COMMANDS
@@ -164,7 +164,7 @@ impl Sampler {
         let length = reader.read();
         let degrade = reader.read();
 
-        let synth_params = if version.at_least(3, 0) {
+        let synth_params = if version.after(&FIRMWARE_3_0_SONG_VERSION) {
             SynthParams::from_reader3(
                 ver,
                 reader,

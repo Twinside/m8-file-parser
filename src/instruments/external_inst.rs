@@ -9,6 +9,7 @@ use super::CommandPack;
 use super::Version;
 use crate::reader::*;
 use crate::writer::Writer;
+use crate::FIRMWARE_6_2_SONG_VERSION;
 use crate::SEND_COMMAND_NAMES;
 use crate::SEND_COMMAND_NAMES_6_2;
 
@@ -85,7 +86,7 @@ impl ExternalInst {
     const MOD_OFFSET: usize = 22;
 
     pub fn command_name(&self, ver: Version) -> &'static [&'static str] {
-        if ver.at_least(6, 1) {
+        if ver.after(&FIRMWARE_6_2_SONG_VERSION) {
             &EXTERNAL_INST_COMMANDS_6_2
         } else {
             &EXTERNAL_INST_COMMANDS

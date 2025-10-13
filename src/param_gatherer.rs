@@ -94,7 +94,7 @@ impl Describable for MixerSettings {
 
 impl Describable for EffectsSettings {
     fn describe<PG : ParameterGatherer>(&self, pg: PG, ver: Version) -> PG {
-        let mfx_name = if ver.at_least(6, 1) {
+        let mfx_name = if ver.after(&FIRMWARE_6_2_SONG_VERSION) {
             "MFX"
         } else {
             "Chorus"
@@ -546,7 +546,7 @@ pub fn describe_succint_params<PG : ParameterGatherer>(sp: &SynthParams, pg: PG,
       .enumeration("LIM", sp.limit.0, sp.limit.str())
       .hex(dests::PAN, sp.mixer_pan)
       .hex("DRY", sp.mixer_dry)
-      .hex(if ver.at_least(6, 1) { "MFX" } else { "CHORUS "}, 
+      .hex(if ver.after(&FIRMWARE_6_2_SONG_VERSION) { "MFX" } else { "CHORUS "}, 
             sp.mixer_mfx)
       .hex("DELAY", sp.mixer_delay)
       .hex("REVERB", sp.mixer_reverb);

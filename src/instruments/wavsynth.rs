@@ -175,7 +175,7 @@ impl WavSynth {
     pub const MOD_OFFSET: usize = 30;
 
     pub fn command_name(&self, ver: Version) -> &'static [&'static str] {
-        if ver.at_least(6, 1) {
+        if ver.after(&FIRMWARE_6_2_SONG_VERSION) {
             &WAVSYNTH_COMMAND_NAMES_6_2
         } else {
             &WAVSYNTH_COMMAND_NAMES
@@ -229,7 +229,7 @@ impl WavSynth {
         let mult = reader.read();
         let warp = reader.read();
         let scan = reader.read();
-        let synth_params = if version.at_least(3, 0) {
+        let synth_params = if version.after(&FIRMWARE_3_0_SONG_VERSION) {
             SynthParams::from_reader3(
                 ver,
                 reader,

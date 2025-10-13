@@ -390,15 +390,15 @@ impl FX {
 
     /// Retrieve command names for a given version
     pub fn fx_command_names(ver: Version) -> FxCommands {
-        if ver.at_least(6, 1) {
+        if ver.after(&FIRMWARE_6_2_SONG_VERSION) {
             FxCommands {
                 commands: &COMMANDS_V6_2,
             }
-        } else if ver.at_least(4, 0) {
+        } else if ver.after(&FIRMWARE_4_0_SONG_VERSION) {
             FxCommands {
                 commands: &COMMANDS_V4,
             }
-        } else if ver.at_least(3, 0) {
+        } else if ver.after(&FIRMWARE_3_0_SONG_VERSION) {
             FxCommands {
                 commands: &COMMANDS_V3,
             }

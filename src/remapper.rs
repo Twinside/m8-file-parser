@@ -4,8 +4,7 @@ use arr_macro::arr;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 use crate::{
-    songs::{Song, V4_1_OFFSETS, V4_OFFSETS},
-    Instrument, Version, FX,
+    songs::{Song, V4_1_OFFSETS, V4_OFFSETS}, Instrument, Version, FIRMWARE_5_0_SONG_VERSION, FX
 };
 
 #[repr(u8)]
@@ -52,7 +51,7 @@ impl EqMapping {
         let command_names = FX::fx_command_names(ver);
         let eq_tracking_commands = command_names.find_indices(&EQ_TRACKING_COMMAND_NAMES);
 
-        if ver.at_least(4, 1) {
+        if ver.after(&FIRMWARE_5_0_SONG_VERSION) {
             EqMapping {
                 eq_tracking_commands,
                 mapping: vec![0; V4_1_OFFSETS.instrument_eq_count],
@@ -556,7 +555,8 @@ impl<'a> InstrumentAllocatorState<'a> {
             if equ < self.eq_flags.len() && !self.eq_flags[equ] {
                 // prior to version 5, only 32 Eqs were possible, no
                 // sense to try to keep them in sync with the instrument numbe
-                let is_instrum_eq = self.from_song.version.at_least(5, 0) && (equ == instr_ix);
+                let is_instrum_eq =
+                    self.from_song.version.after(&FIRMWARE_5_0_SONG_VERSION) && (equ == instr_ix);
 
                 self.allocate_eq(equ, is_instrum_eq)?;
             }
