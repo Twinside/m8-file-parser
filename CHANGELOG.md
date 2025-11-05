@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6
+
+ - Fixed Hypersynth off oscilator parsing and writing.
+
 ## 0.5.1
 
  - Fixed Version writing.

@@ -13,7 +13,7 @@ Big thanks to AlexCharlton for the original version of the package [m8-files](ht
 
 Add to your `Cargo.toml`:
 ```
-m8-file-parser = "0.5"
+m8-file-parser = "0.6"
 ```
 Or
 ```

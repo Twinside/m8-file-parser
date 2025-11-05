@@ -14,6 +14,42 @@ use crate::SEND_COMMAND_NAMES_6_2;
 use arr_macro::arr;
 use array_concat::concat_arrays;
 
+#[derive(PartialEq, Debug, Clone, Default)]
+pub struct Chord {
+    pub mask: u8,
+    pub offsets : [u8; 6]
+}
+
+impl Chord {
+    pub fn read(reader: &mut Reader) -> Self{
+        let mask = reader.read();
+
+        Self {
+            mask,
+            offsets: arr![reader.read(); 6]
+        }
+    }
+
+    pub fn write(&self, w: &mut Writer) {
+        w.write(self.mask);
+        for k in &self.offsets {
+            w.write(*k);
+        }
+    }
+
+    pub fn is_osc_on(&self, osc: usize) -> bool{
+        (self.mask & (1 << osc)) != 0
+    }
+
+    pub fn offset_str(&self, osc: usize) -> String {
+        if self.is_osc_on(osc) {
+            format!("{:02X}", self.offsets[osc])
+        } else {
+            String::from("--")
+        }
+    }
+}
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct HyperSynth {
     pub number: u8,
@@ -29,7 +65,7 @@ pub struct HyperSynth {
     pub width: u8,
     pub subosc: u8,
 
-    pub chords: [[u8; 6]; 0x10],
+    pub chords: [Chord; 0x10]
 }
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
@@ -150,18 +186,9 @@ impl HyperSynth {
 
         self.synth_params.write(ver, w, HyperSynth::MOD_OFFSET);
 
-        for chd in self.chords {
-            w.write(0xFF);
-            for k in chd {
-                w.write(k);
-            }
+        for chd in &self.chords {
+            chd.write(w);
         }
-    }
-
-    fn load_chord(reader: &mut Reader) -> [u8; 6] {
-        // padding
-        let _ = reader.read();
-        arr![reader.read(); 6]
     }
 
     pub fn from_reader(ver: Version, reader: &mut Reader, number: u8) -> M8Result<Self> {
@@ -188,7 +215,7 @@ impl HyperSynth {
             HyperSynth::MOD_OFFSET,
         )?;
 
-        let chords = arr![HyperSynth::load_chord(reader); 0x10];
+        let chords = arr![Chord::read(reader); 0x10];
 
         Ok(HyperSynth {
             number,
@@ -203,7 +230,7 @@ impl HyperSynth {
             swarm,
             width,
             subosc,
-            chords,
+            chords
         })
     }
 }

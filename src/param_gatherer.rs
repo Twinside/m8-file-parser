@@ -351,6 +351,19 @@ impl Describable for ExternalInst {
     }
 }
 
+impl Describable for Chord {
+    fn describe<PG : ParameterGatherer>(&self, pg: PG, _ver: Version) -> PG {
+        pg.str("CHD",
+            &format!("{} {} {} {} {} {}",
+                self.offset_str(0),
+                self.offset_str(1),
+                self.offset_str(2),
+                self.offset_str(3),
+                self.offset_str(4),
+                self.offset_str(5)))
+    }
+}
+
 impl Describable for HyperSynth {
     fn describe<PG : ParameterGatherer>(&self, pg: PG, ver: Version) -> PG {
         let dc = &self.default_chord;
@@ -365,7 +378,16 @@ impl Describable for HyperSynth {
           .hex("SHIFT", self.shift)
           .hex("SWARM", self.swarm)
           .hex("WIDTH", self.width)
-          .hex("SUBOSC", self.subosc);
+          .hex("SUBOSC", self.subosc)
+          .nest_f("CHORDS", |ipg| {
+                let mut ipg = ipg;
+
+                for chd in self.chords.iter() {
+                    ipg = chd.describe(ipg, ver)
+                };
+
+                ipg
+          });
 
         let pg =
             self.synth_params.describe_with_dic(pg, self.filter_types(ver), ver);
