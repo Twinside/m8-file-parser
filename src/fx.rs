@@ -296,7 +296,7 @@ const FX_MIXER_COMMAND_V4 : [&'static str; 45] = [
 ];
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
-const FX_MIXER_COMMAND_V6_2 : [&'static str; 50] = [
+const FX_MIXER_COMMAND_V6_2 : [&'static str; 51] = [
     "VMV",
     "XMM",
     "XMF",
@@ -346,9 +346,10 @@ const FX_MIXER_COMMAND_V6_2 : [&'static str; 50] = [
 
     "XRH", // 0x48
     "XMT", // 0x49
-    "OTT", 
-    "OTC", 
-    "OTI",
+    "OTT", // 0x4A
+    "OTC", // 0x4B
+    "OTI", // 0x4C
+    "MTT", // 0x4D
 ];
 
 const COMMANDS_V4: [&'static str; concat_arrays_size!(SEQ_COMMAND_V3, FX_MIXER_COMMAND_V4)] =

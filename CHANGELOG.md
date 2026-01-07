@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+
+ - M8 Firmware 6.5, with new MTT command
+
 ## 0.6
 
  - Fixed Hypersynth off oscilator parsing and writing.
