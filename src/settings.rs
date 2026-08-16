@@ -182,7 +182,8 @@ pub enum FxKind {
     #[default]
     Chorus,
     Phaser,
-    Flanger
+    Flanger,
+    Comb
 }
 
 #[derive(PartialEq, Debug, Clone)]

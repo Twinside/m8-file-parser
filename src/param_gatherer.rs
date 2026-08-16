@@ -367,6 +367,7 @@ impl Describable for Chord {
 impl Describable for HyperSynth {
     fn describe<PG : ParameterGatherer>(&self, pg: PG, ver: Version) -> PG {
         let dc = &self.default_chord;
+        let shape = self.shape.unwrap_or(HyperSynthShape::Saw);
 
         let pg = pg
           .str(params::NAME, &self.name)
@@ -379,6 +380,7 @@ impl Describable for HyperSynth {
           .hex("SWARM", self.swarm)
           .hex("WIDTH", self.width)
           .hex("SUBOSC", self.subosc)
+          .enumeration("SHAPE", shape as u8, &format!("{:?}", shape))
           .nest_f("CHORDS", |ipg| {
                 let mut ipg = ipg;
 

@@ -1,3 +1,4 @@
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use super::common::SynthParams;
 use super::common::TranspEq;
 use super::common::COMMON_FILTER_TYPES;
@@ -50,6 +51,25 @@ impl Chord {
     }
 }
 
+#[repr(u8)]
+#[derive(IntoPrimitive, TryFromPrimitive, PartialEq, Copy, Clone, Default, Debug)]
+pub enum HyperSynthShape {
+    #[default]
+    Saw = 0x0,
+    SoftSaw = 0x1,
+    DarkSaw = 0x2,
+    SquareSoft = 0x3,
+    Triangle = 0x4,
+    Sine = 0x5,
+    Sine3x = 0x6,
+    SineFb = 0x7,
+    SineFold = 0x8,
+    SineRing = 0x9,
+    SineHalf = 0xA,
+    SineOrgan = 0xB
+}
+
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct HyperSynth {
     pub number: u8,
@@ -65,7 +85,8 @@ pub struct HyperSynth {
     pub width: u8,
     pub subosc: u8,
 
-    pub chords: [Chord; 0x10]
+    pub chords: [Chord; 0x10],
+    pub shape: Option<HyperSynthShape>
 }
 
 #[rustfmt::skip] // Keep constants with important order vertical for maintenance
@@ -189,6 +210,10 @@ impl HyperSynth {
         for chd in &self.chords {
             chd.write(w);
         }
+
+        if let Some(shape) = self.shape {
+            w.write(shape as u8);
+        }
     }
 
     pub fn from_reader(ver: Version, reader: &mut Reader, number: u8) -> M8Result<Self> {
@@ -217,6 +242,18 @@ impl HyperSynth {
 
         let chords = arr![Chord::read(reader); 0x10];
 
+        let shape =
+            if ver.at_least(6, 6) {
+                let shape_byte = synth_params.shape;
+                let hsshape =
+                    HyperSynthShape::try_from(shape_byte)
+                        .map_err(|_| ParseError(String::from("Invalid hypersynth shape parameter")))?;
+
+                Some(hsshape)
+            } else {
+                None
+            };
+
         Ok(HyperSynth {
             number,
             name,
@@ -230,7 +267,8 @@ impl HyperSynth {
             swarm,
             width,
             subosc,
-            chords
+            chords,
+            shape
         })
     }
 }

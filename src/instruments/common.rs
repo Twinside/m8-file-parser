@@ -104,6 +104,9 @@ pub struct SynthParams {
     pub amp: u8,
     pub limit: LimitType,
 
+    /// Extra parameter synth dependent.
+    pub shape: u8,
+
     pub mixer_pan: u8,
     pub mixer_dry: u8,
     pub mixer_mfx: u8,
@@ -147,6 +150,7 @@ impl SynthParams {
             amp: 0,
             limit: LimitType::try_from(0)?,
 
+            shape: 0,
             mixer_pan: 0,
             mixer_dry: 0,
             mixer_mfx: 0,
@@ -175,6 +179,7 @@ impl SynthParams {
             amp: 0,
             limit: LimitType::try_from(0)?,
 
+            shape: 0,
             mixer_pan: 0,
             mixer_dry: 0,
             mixer_mfx: 0,
@@ -204,6 +209,7 @@ impl SynthParams {
             amp: reader.read(),
             limit: LimitType::try_from(reader.read())?,
 
+            shape: 0,
             mixer_pan: reader.read(),
             mixer_dry: reader.read(),
             mixer_mfx: reader.read(),
@@ -236,6 +242,11 @@ impl SynthParams {
         w.write(self.mixer_reverb);
 
         let writer_pos = w.pos();
+        if ver.at_least(6, 6) {
+            w.skip(3);
+            w.write(self.shape);
+        }
+
         if ver.after(&FIRMWARE_5_0_SONG_VERSION) {
             w.seek(writer_pos + mod_offset - 1);
             w.write(self.associated_eq);
@@ -277,6 +288,11 @@ impl SynthParams {
         let mixer_reverb = reader.read();
 
         let reader_pos = reader.pos();
+
+        // I'll probably pay for it later
+        reader.skip(3);
+        let shape = reader.read();
+
         let associated_eq = if version.after(&FIRMWARE_5_0_SONG_VERSION) {
             reader.set_pos(reader_pos + mod_offset - 1);
             reader.read()
@@ -309,6 +325,7 @@ impl SynthParams {
             mixer_reverb,
 
             associated_eq,
+            shape,
 
             mods,
         })

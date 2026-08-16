@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.2
+
+ - M8 Firmware 6.6, with new comb filter FX
+ - Hypersynth new shape parameters
+
 ## 0.6.1
 
  - M8 Firmware 6.5, with new MTT command

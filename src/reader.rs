@@ -68,6 +68,10 @@ impl Reader {
         self.position
     }
 
+    pub fn skip(&mut self, by: usize) {
+        self.position += by
+    }
+
     pub fn set_pos(&mut self, n: usize) {
         self.position = n;
     }
