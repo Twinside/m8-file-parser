@@ -115,7 +115,6 @@ pub struct Song {
     pub tables: Vec<Table>,
     pub grooves: Vec<Groove>,
     pub scales: Vec<Scale>,
-    pub bookmarks: Vec<u8>,
 
     pub mixer_settings: MixerSettings,
     pub effects_settings: EffectsSettings,
@@ -278,7 +277,7 @@ impl Song {
     }
 
     fn from_reader(reader: &mut Reader, version: Version) -> M8Result<Self> {
-        // TODO read groove, scale
+        // TODO scale
         let directory = reader.read_string(128);
         let transpose = reader.read();
         let tempo = LittleEndian::read_f32(reader.read_bytes(4));
@@ -288,7 +287,6 @@ impl Song {
         let key = reader.read();
         reader.read_bytes(18); // Skip
         let mixer_settings = MixerSettings::from_reader(reader, version)?;
-        let bookmarks = vec![];
 
         reader.set_pos(V4_OFFSETS.groove);
         let mut grooves = (0..Self::N_GROOVES)
@@ -316,6 +314,10 @@ impl Song {
         let midi_mappings = (0..Self::N_MIDI_MAPPINGS)
             .map(|_| MidiMapping::from_reader(reader))
             .collect::<M8Result<Vec<MidiMapping>>>()?;
+
+        if reader.len() > V4_OFFSETS.bookmarks + SongSteps::ROW_COUNT {
+            song.bookmarks = reader.read_bytes(SongSteps::ROW_COUNT).try_into().unwrap();
+        }
 
         let scales: Vec<Scale> = if version.at_least(2, 5) {
             reader.set_pos(V4_OFFSETS.scale);
@@ -381,7 +383,6 @@ impl Song {
             key,
             mixer_settings,
             grooves,
-            bookmarks,
             song,
             phrases,
             chains,
@@ -402,6 +403,9 @@ impl Song {
 pub struct SongSteps {
     pub steps: [u8; SongSteps::TRACK_COUNT * SongSteps::ROW_COUNT],
 
+    /// Bit vector marking if any song step has a bookmark.
+    pub bookmarks: [u8; SongSteps::ROW_COUNT],
+
     /// From firmware version 6.6 onwards
     pub row_bookmarks: Option<[u8; SongSteps::ROW_COUNT]>
 }
@@ -409,6 +413,14 @@ pub struct SongSteps {
 impl SongSteps {
     pub const TRACK_COUNT: usize = 8;
     pub const ROW_COUNT: usize = 0x100;
+
+    /// Row go from 0 to SongSetps::ROW_COUNT - 1 and track goes from 
+    /// 0 to SongSteps::TRACK_COUNT - 1 here.
+    pub fn is_bookmarked(&self, row: usize, track: usize) -> bool {
+        row < SongSteps::ROW_COUNT &&
+        track < SongSteps::TRACK_COUNT &&
+            (self.bookmarks[row] & (1 << track)) !=  0
+    }
 
     pub fn print_screen(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
         self.print_screen_from_to(f, 0, self.last_modified_row() as u8)
@@ -462,6 +474,7 @@ impl SongSteps {
     fn from_reader(reader: &mut Reader) -> M8Result<Self> {
         Ok(Self {
             steps: reader.read_bytes(2048).try_into().unwrap(),
+            bookmarks: [0; SongSteps::ROW_COUNT],
             row_bookmarks: None
         })
     }
