@@ -210,10 +210,6 @@ impl HyperSynth {
         for chd in &self.chords {
             chd.write(w);
         }
-
-        if let Some(shape) = self.shape {
-            w.write(shape as u8);
-        }
     }
 
     pub fn from_reader(ver: Version, reader: &mut Reader, number: u8) -> M8Result<Self> {

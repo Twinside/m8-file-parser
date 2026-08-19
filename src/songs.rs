@@ -1,5 +1,6 @@
 use std::cmp::min;
 use std::fmt;
+use std::fmt::Display;
 
 use crate::eq::Equ;
 use crate::fx::*;
@@ -30,6 +31,9 @@ pub struct Offsets {
     pub effect_settings: usize,
     pub midi_mapping: usize,
     pub scale: usize,
+
+    /// Adress of the bitmask for song bookmarks.
+    pub bookmarks: usize,
     pub eq: usize,
 
     /// Number of eq for the song (different between 4.0 & 4.1)
@@ -38,6 +42,14 @@ pub struct Offsets {
     /// For instrument size, where is the EQ information written
     /// (if any)
     pub instrument_file_eq_offset: Option<usize>,
+
+    /// Where the PPQN for groove are stored, after firmware
+    /// 6.5
+    pub groove_ppqn_offsets : Option<usize>,
+
+    /// Starting with firmware 6.6, there is an option to
+    /// bookmark/color rows
+    pub row_bookmark_offset : Option<usize>
 }
 
 impl Offsets {
@@ -56,10 +68,13 @@ pub const V4_OFFSETS: Offsets = Offsets {
     instruments: 0x13A3E,
     effect_settings: 0x1A5C1,
     midi_mapping: 0x1A5FE,
+    bookmarks: 0x1A97E,
     scale: 0x1AA7E,
     eq: 0x1AD5A + 4,
     instrument_eq_count: 32,
     instrument_file_eq_offset: None,
+    groove_ppqn_offsets: None,
+    row_bookmark_offset: None
 };
 
 pub const V4_1_OFFSETS: Offsets = Offsets {
@@ -71,10 +86,13 @@ pub const V4_1_OFFSETS: Offsets = Offsets {
     instruments: 0x13A3E,
     effect_settings: 0x1A5C1,
     midi_mapping: 0x1A5FE,
+    bookmarks: 0x1A97E,
     scale: 0x1AA7E,
     eq: 0x1AD5A + 4,
     instrument_eq_count: 0x80,
     instrument_file_eq_offset: Some(0x165),
+    groove_ppqn_offsets: Some(0x1B6A6),
+    row_bookmark_offset: Some(0x1B6C6)
 };
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -97,6 +115,7 @@ pub struct Song {
     pub tables: Vec<Table>,
     pub grooves: Vec<Groove>,
     pub scales: Vec<Scale>,
+    pub bookmarks: Vec<u8>,
 
     pub mixer_settings: MixerSettings,
     pub effects_settings: EffectsSettings,
@@ -269,12 +288,13 @@ impl Song {
         let key = reader.read();
         reader.read_bytes(18); // Skip
         let mixer_settings = MixerSettings::from_reader(reader, version)?;
+        let bookmarks = vec![];
 
         reader.set_pos(V4_OFFSETS.groove);
-        let grooves = (0..Self::N_GROOVES)
+        let mut grooves = (0..Self::N_GROOVES)
             .map(|i| Groove::from_reader(reader, i as u8))
             .collect::<M8Result<Vec<Groove>>>()?;
-        let song = SongSteps::from_reader(reader)?;
+        let mut song = SongSteps::from_reader(reader)?;
         let phrases = (0..Self::N_PHRASES)
             .map(|_| Phrase::from_reader(reader, version))
             .collect::<M8Result<Vec<Phrase>>>()?;
@@ -327,6 +347,29 @@ impl Song {
             vec![]
         };
 
+        // for recent enough version we patch the PPQN information
+        if version.at_least(6, 5) {
+            if let Some(ppqn_offset) = V4_1_OFFSETS.groove_ppqn_offsets {
+                if reader.len() > ppqn_offset + grooves.len() {
+                    reader.set_pos(ppqn_offset);
+
+                    for i in 0 .. grooves.len() {
+                        grooves[i].ppqn = Some(reader.read())
+                    }
+                }
+            }
+        }
+
+        // for recent enough version we patch the PPQN information
+        if version.at_least(6, 6) {
+            if let Some(row_bookmark_offset) = V4_1_OFFSETS.row_bookmark_offset {
+                if reader.len() > row_bookmark_offset + SongSteps::ROW_COUNT {
+                    reader.set_pos(row_bookmark_offset);
+                    song.row_bookmarks = Some(reader.read_bytes(SongSteps::ROW_COUNT).try_into().unwrap())
+                }
+            }
+        }
+
         Ok(Self {
             version,
             directory,
@@ -338,6 +381,7 @@ impl Song {
             key,
             mixer_settings,
             grooves,
+            bookmarks,
             song,
             phrases,
             chains,
@@ -357,6 +401,9 @@ impl Song {
 #[derive(PartialEq, Clone)]
 pub struct SongSteps {
     pub steps: [u8; SongSteps::TRACK_COUNT * SongSteps::ROW_COUNT],
+
+    /// From firmware version 6.6 onwards
+    pub row_bookmarks: Option<[u8; SongSteps::ROW_COUNT]>
 }
 
 impl SongSteps {
@@ -415,6 +462,7 @@ impl SongSteps {
     fn from_reader(reader: &mut Reader) -> M8Result<Self> {
         Ok(Self {
             steps: reader.read_bytes(2048).try_into().unwrap(),
+            row_bookmarks: None
         })
     }
 }
@@ -1143,6 +1191,32 @@ impl TableStep {
 pub struct Groove {
     pub number: u8,
     pub steps: [u8; 16],
+
+    /// PPQN is stored elsewhere than the groove, so
+    /// it is edited at a later step (if available)
+    pub ppqn: Option<u8>
+}
+
+impl Display for Groove {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "GROOVE {:02X}\n\n", self.number)?;
+
+        if let Some(_) = self.ppqn {
+            write!(f, "PPQN: {}\n", self.active_ppqn())?;
+        } else {
+            write!(f, "PPQN: 24 (not filled)\n")?;
+        }
+
+        for step in self.steps {
+            if step == 0xFF {
+                write!(f, "--\n")?;
+            } else {
+                write!(f, "{:02X}\n", step)?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl Groove {
@@ -1150,7 +1224,20 @@ impl Groove {
         Ok(Self {
             number,
             steps: reader.read_bytes(16).try_into().unwrap(),
+            ppqn: None
         })
+    }
+
+
+    pub fn active_ppqn(&self) -> usize {
+        match self.ppqn {
+            None => 24,
+            Some(0) => 24,
+            Some(1) => 48,
+            Some(2) => 96,
+            Some(3) => 192,
+            _ => 24
+        }
     }
 
     pub fn write(&self, w: &mut Writer) {
@@ -1163,11 +1250,6 @@ impl Groove {
     }
 }
 
-impl fmt::Display for Groove {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Groove {}:{:?}", self.number, self.active_steps())
-    }
-}
 impl fmt::Debug for Groove {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", &self)

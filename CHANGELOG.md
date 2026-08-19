@@ -4,6 +4,10 @@
 
  - M8 Firmware 6.6, with new comb filter FX
  - Hypersynth new shape parameters
+ - Added reading of ppqn option for groove from firmware 6.5
+   (was not parsed before)
+ - Added parsing of song bookmarks (when marking individual chain in a song)
+ - Added parsing of row bookmarks (when marking individual chain in a song)
 
 ## 0.6.1
 
