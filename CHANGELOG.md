@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.2
+## 0.7
 
  - M8 Firmware 6.6, with new comb filter FX
  - Hypersynth new shape parameters
@@ -8,6 +8,9 @@
    (was not parsed before)
  - Added parsing of song bookmarks (when marking individual chain in a song)
  - Added parsing of row bookmarks (when marking individual chain in a song)
+
+Sadly bookmark parsing and hypersynth changes forces a semantic version bump
+even if the changes are minor.
 
 ## 0.6.1
 

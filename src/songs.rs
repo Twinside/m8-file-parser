@@ -365,7 +365,7 @@ impl Song {
         // for recent enough version we patch the PPQN information
         if version.at_least(6, 6) {
             if let Some(row_bookmark_offset) = V4_1_OFFSETS.row_bookmark_offset {
-                if reader.len() > row_bookmark_offset + SongSteps::ROW_COUNT {
+                if reader.len() >= row_bookmark_offset + SongSteps::ROW_COUNT {
                     reader.set_pos(row_bookmark_offset);
                     song.row_bookmarks = Some(reader.read_bytes(SongSteps::ROW_COUNT).try_into().unwrap())
                 }
